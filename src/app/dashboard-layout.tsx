@@ -41,6 +41,7 @@ export default function DashboardLayout({
   const currentUser = mockUsers[0]; // Assuming Alice Admin is logged in
   const userRole = mockRoles.find(role => role.id === currentUser.roleId);
   const isSuperAdmin = userRole?.name === 'Super Admin';
+  const isTenantAdmin = userRole?.name === 'Admin';
 
 
   return (
@@ -52,69 +53,7 @@ export default function DashboardLayout({
               <SidebarTrigger />
             </SidebarHeader>
             <SidebarMenu>
-              <SidebarGroup>
-                <SidebarGroupLabel>Customer</SidebarGroupLabel>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Products">
-                    <Link href="/products">
-                      <Store />
-                      <span>Products</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Cart">
-                    <Link href="/cart">
-                      <ShoppingCart />
-                      <span>Cart</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Orders">
-                    <Link href="/orders">
-                      <Package2 />
-                      <span>Orders</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarGroup>
-              <SidebarGroup>
-                <SidebarGroupLabel>Internal</SidebarGroupLabel>
-                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Customers">
-                    <Link href="/customers">
-                      <Users />
-                      <span>Customers</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Users">
-                    <Link href="/users">
-                      <Users2 />
-                      <span>Users</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Route Planner">
-                    <Link href="/route-planner">
-                      <Map />
-                      <span>Route Planner</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Roles & Permissions">
-                    <Link href="/roles-and-permissions">
-                      <ShieldCheck />
-                      <span>Roles &amp; Permissions</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarGroup>
-              {isSuperAdmin && (
+              {isSuperAdmin ? (
                 <SidebarGroup>
                   <SidebarGroupLabel>Super Admin</SidebarGroupLabel>
                   <SidebarMenuItem>
@@ -126,6 +65,71 @@ export default function DashboardLayout({
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarGroup>
+              ) : (
+                <>
+                  <SidebarGroup>
+                    <SidebarGroupLabel>Customer</SidebarGroupLabel>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip="Products">
+                        <Link href="/products">
+                          <Store />
+                          <span>Products</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip="Cart">
+                        <Link href="/cart">
+                          <ShoppingCart />
+                          <span>Cart</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip="Orders">
+                        <Link href="/orders">
+                          <Package2 />
+                          <span>Orders</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarGroup>
+                  <SidebarGroup>
+                    <SidebarGroupLabel>Internal</SidebarGroupLabel>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip="Customers">
+                        <Link href="/customers">
+                          <Users />
+                          <span>Customers</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip="Users">
+                        <Link href="/users">
+                          <Users2 />
+                          <span>Users</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip="Route Planner">
+                        <Link href="/route-planner">
+                          <Map />
+                          <span>Route Planner</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip="Roles & Permissions">
+                        <Link href="/roles-and-permissions">
+                          <ShieldCheck />
+                          <span>Roles &amp; Permissions</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarGroup>
+                </>
               )}
             </SidebarMenu>
           </SidebarContent>

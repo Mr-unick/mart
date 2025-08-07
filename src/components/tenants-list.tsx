@@ -33,13 +33,16 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import TenantFormDialog from './tenant-form-dialog';
+
 
 export default function TenantsList() {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
+    const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+    const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 
     const filteredTenants = mockTenants.filter(tenant => 
         tenant.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -49,18 +52,33 @@ export default function TenantsList() {
         router.push(`/super-admin/tenants/${tenant.id}`);
     };
 
+    const handleEditClick = (tenant: Tenant) => {
+        setSelectedTenant(tenant);
+        setIsFormDialogOpen(true);
+    };
+
     const handleDeleteClick = (tenant: Tenant) => {
-        setTenantToDelete(tenant);
+        setSelectedTenant(tenant);
         setIsDeleteDialogOpen(true);
     };
 
     const confirmDelete = () => {
-        if (tenantToDelete) {
-            console.log("Deleting tenant:", tenantToDelete.id);
+        if (selectedTenant) {
+            console.log("Deleting tenant:", selectedTenant.id);
             // Here you would call an API to delete the tenant
             setIsDeleteDialogOpen(false);
-            setTenantToDelete(null);
+            setSelectedTenant(null);
         }
+    };
+    
+    const handleAddNew = () => {
+        setSelectedTenant(null);
+        setIsFormDialogOpen(true);
+    }
+
+    const handleFormClose = () => {
+        setIsFormDialogOpen(false);
+        setSelectedTenant(null);
     }
 
     return (
@@ -72,7 +90,7 @@ export default function TenantsList() {
                             <CardTitle>Tenant Management</CardTitle>
                             <CardDescription>A list of all tenants in the system.</CardDescription>
                         </div>
-                        <Button>
+                        <Button onClick={handleAddNew}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Add Tenant
                         </Button>
@@ -92,6 +110,7 @@ export default function TenantsList() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
+                                <TableHead>Owner</TableHead>
                                 <TableHead>Address</TableHead>
                                 <TableHead className="w-[50px]"></TableHead>
                             </TableRow>
@@ -100,7 +119,8 @@ export default function TenantsList() {
                             {filteredTenants.map((tenant) => (
                                 <TableRow key={tenant.id} onClick={() => handleRowClick(tenant)} className="cursor-pointer">
                                     <TableCell className="font-medium">{tenant.name}</TableCell>
-                                    <TableCell>{`${tenant.address.street}, ${tenant.address.city}, ${tenant.address.state}`}</TableCell>
+                                    <TableCell>{tenant.ownerName}</TableCell>
+                                    <TableCell>{`${tenant.address.city}, ${tenant.address.state}`}</TableCell>
                                     <TableCell onClick={(e) => e.stopPropagation()}>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -110,7 +130,7 @@ export default function TenantsList() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => console.log("Edit tenant", tenant.id)}>
+                                                <DropdownMenuItem onClick={() => handleEditClick(tenant)}>
                                                     Edit
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem 
@@ -143,6 +163,11 @@ export default function TenantsList() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            <TenantFormDialog 
+                isOpen={isFormDialogOpen}
+                onOpenChange={handleFormClose}
+                tenant={selectedTenant}
+            />
         </>
     );
 }

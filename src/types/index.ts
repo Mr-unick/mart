@@ -3,6 +3,8 @@ export interface Tenant {
   id: string;
   name: string;
   address: Address;
+  ownerName: string;
+  ownerEmail: string;
 }
 
 export interface Permission {
@@ -44,7 +46,7 @@ export interface Customer {
 
 export interface Product {
   id: string;
-  name: string;
+  name:string;
   description: string;
   imageUrl: string;
   defaultPrice: number;
