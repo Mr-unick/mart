@@ -1,3 +1,6 @@
+
+'use server'
+
 import Link from 'next/link';
 import {
   Package2,
@@ -9,7 +12,8 @@ import {
   Users2,
   Building,
 } from 'lucide-react';
-
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import Header from '@/components/header';
 import {
   Sidebar,
@@ -26,20 +30,19 @@ import {
 } from '@/components/ui/sidebar';
 import { CartProvider } from '@/context/cart-context';
 import { prisma } from '@/lib/db';
+import { verifyAuth } from '@/lib/auth';
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // In a real app, you'd get the current user from an auth session.
-  // For now, we'll fetch the hardcoded super admin.
-  const currentUser = await prisma.user.findUnique({
-    where: { id: 'user_super_admin' },
-    include: { role: { include: { permissions: true } } },
-  });
+  const auth = await verifyAuth();
+  if (!auth.user) {
+    return redirect('/');
+  }
 
-  const isSuperAdmin = currentUser?.role.name === 'Super Admin';
+  const isSuperAdmin = auth.user.role.name === 'Super Admin';
 
   return (
     <CartProvider>
