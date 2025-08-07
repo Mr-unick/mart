@@ -37,8 +37,8 @@ async function main() {
             city: 'Systemville',
             state: 'SS',
             zip: '00000',
-            ownerName: 'Sys Admin',
-            ownerEmail: 'super@admin.com',
+            ownerName: 'Nikhil Admin',
+            ownerEmail: 'nikhil@gmail.com',
         },
     });
     console.log('Upserted system tenant');
@@ -60,12 +60,12 @@ async function main() {
 
     // --- Seed Super Admin User ---
     await prisma.user.upsert({
-        where: { email: 'alice@example.com' },
+        where: { email: 'nikhil@gmail.com' },
         update: {},
         create: {
             id: 'user_super_admin',
-            name: 'Alice Admin',
-            email: 'alice@example.com',
+            name: 'Nikhil Admin',
+            email: 'nikhil@gmail.com',
             roleId: superAdminRole.id,
             tenantId: systemTenant.id,
         },
