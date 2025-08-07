@@ -1,3 +1,4 @@
+
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -70,6 +71,60 @@ async function main() {
         },
     });
     console.log('Seeded Super Admin user');
+
+    // --- Seed Sample Tenant ---
+    const sampleTenant = await prisma.tenant.upsert({
+        where: { id: 'tenant_innovate' },
+        update: {},
+        create: {
+            id: 'tenant_innovate',
+            name: 'Innovate Corp',
+            street: '456 Innovation Dr',
+            city: 'Tech City',
+            state: 'TX',
+            zip: '75001',
+            ownerName: 'Bob Builder',
+            ownerEmail: 'owner@innovate.com',
+        },
+    });
+    console.log('Upserted sample tenant');
+
+    // --- Seed Tenant Admin Role for Sample Tenant ---
+     const tenantAdminRole = await prisma.role.upsert({
+        where: { name_tenantId: { name: 'Tenant Admin', tenantId: sampleTenant.id } },
+        update: {},
+        create: {
+            id: 'role_tenant_admin_innovate',
+            name: 'Tenant Admin',
+            tenantId: sampleTenant.id,
+            permissions: {
+                connect: [
+                    { id: 'perm_view_products' },
+                    { id: 'perm_manage_cart' },
+                    { id: 'perm_view_orders' },
+                    { id: 'perm_manage_routes' },
+                    { id: 'perm_manage_settings' },
+                    { id: 'perm_manage_users' },
+                    { id: 'perm_manage_roles' },
+                ]
+            }
+        },
+    });
+    console.log('Seeded Tenant Admin role for sample tenant');
+
+    // --- Seed Tenant Admin User for Sample Tenant ---
+    await prisma.user.upsert({
+        where: { email: 'owner@innovate.com' },
+        update: {},
+        create: {
+            id: 'user_tenant_admin_innovate',
+            name: 'Bob Builder',
+            email: 'owner@innovate.com',
+            roleId: tenantAdminRole.id,
+            tenantId: sampleTenant.id,
+        },
+    });
+    console.log('Seeded Tenant Admin user for sample tenant');
 
 
     console.log(`Seeding finished.`);
