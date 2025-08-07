@@ -79,7 +79,7 @@ export const mockUsers: User[] = [
     // Note: In a real app, Alice would be a super admin, but for mock data,
     // we'll make her a regular Admin of tenant_01 to see most of the UI.
     // To test the super admin view, change her roleId to 'role_super_admin'.
-    { id: 'user_01', name: 'Alice Admin', email: 'alice@example.com', roleId: 'role_admin', tenantId: 'tenant_01' },
+    { id: 'user_01', name: 'Alice Admin', email: 'alice@example.com', roleId: 'role_super_admin', tenantId: 'tenant_01' },
     { id: 'user_02', name: 'Bob Internal', email: 'bob@example.com', roleId: 'role_internal', tenantId: 'tenant_01' },
     { id: 'user_03', name: 'Charlie Customer', email: 'charlie@example.com', roleId: 'role_customer', tenantId: 'tenant_01' },
     { id: 'user_super', name: 'Samantha Super', email: 'samantha@example.com', roleId: 'role_super_admin', tenantId: 'system' },
