@@ -12,6 +12,24 @@ export const mockTenant: Tenant = {
   }
 };
 
+export const mockTenants: Tenant[] = [
+    {
+        id: 'tenant_01',
+        name: 'Innovate Corp',
+        address: { street: '123 Tech Avenue', city: 'Silicon Valley', state: 'CA', zip: '94043' },
+    },
+    {
+        id: 'tenant_02',
+        name: 'Synergy Solutions',
+        address: { street: '456 Business Blvd', city: 'Metropolis', state: 'NY', zip: '10001' },
+    },
+    {
+        id: 'tenant_03',
+        name: 'Quantum Dynamics',
+        address: { street: '789 Innovation Drive', city: 'Boston', state: 'MA', zip: '02110' },
+    }
+]
+
 export const mockPermissions: Permission[] = [
     { id: 'perm_view_products', name: 'View Products', description: 'Can view the product catalog.' },
     { id: 'perm_manage_cart', name: 'Manage Cart', description: 'Can add/remove items from the cart.' },
@@ -20,14 +38,21 @@ export const mockPermissions: Permission[] = [
     { id: 'perm_manage_settings', name: 'Manage Tenant Settings', description: 'Can edit tenant profile.' },
     { id: 'perm_manage_users', name: 'Manage Users', description: 'Can add, edit, and remove users.' },
     { id: 'perm_manage_roles', name: 'Manage Roles', description: 'Can define roles and assign permissions.' },
+    { id: 'perm_manage_tenants', name: 'Manage Tenants', description: 'Can create, edit, and delete tenants.' },
 ];
 
 export const mockRoles: Role[] = [
     {
+        id: 'role_super_admin',
+        name: 'Super Admin',
+        tenantId: 'system',
+        permissions: ['perm_manage_tenants'],
+    },
+    {
         id: 'role_admin',
         name: 'Admin',
         tenantId: 'tenant_01',
-        permissions: mockPermissions.map(p => p.id), // Admin has all permissions
+        permissions: mockPermissions.filter(p => p.id !== 'perm_manage_tenants').map(p => p.id), // Admin has all tenant-level permissions
     },
     {
         id: 'role_internal',
@@ -51,9 +76,13 @@ export const mockRoles: Role[] = [
 ];
 
 export const mockUsers: User[] = [
+    // Note: In a real app, Alice would be a super admin, but for mock data,
+    // we'll make her a regular Admin of tenant_01 to see most of the UI.
+    // To test the super admin view, change her roleId to 'role_super_admin'.
     { id: 'user_01', name: 'Alice Admin', email: 'alice@example.com', roleId: 'role_admin', tenantId: 'tenant_01' },
     { id: 'user_02', name: 'Bob Internal', email: 'bob@example.com', roleId: 'role_internal', tenantId: 'tenant_01' },
     { id: 'user_03', name: 'Charlie Customer', email: 'charlie@example.com', roleId: 'role_customer', tenantId: 'tenant_01' },
+    { id: 'user_super', name: 'Samantha Super', email: 'samantha@example.com', roleId: 'role_super_admin', tenantId: 'system' },
 ];
 
 export const mockProducts: Product[] = [

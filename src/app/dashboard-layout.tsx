@@ -11,6 +11,7 @@ import {
   User,
   Users2,
   Palette,
+  Building,
 } from 'lucide-react';
 
 import Header from '@/components/header';
@@ -29,12 +30,19 @@ import {
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { CartProvider } from '@/context/cart-context';
+import { mockUsers, mockRoles } from '@/data/mock-data';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // In a real app, you'd get the current user from an auth session.
+  const currentUser = mockUsers[0]; // Assuming Alice Admin is logged in
+  const userRole = mockRoles.find(role => role.id === currentUser.roleId);
+  const isSuperAdmin = userRole?.name === 'Super Admin';
+
+
   return (
     <CartProvider>
       <SidebarProvider>
@@ -114,6 +122,19 @@ export default function DashboardLayout({
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarGroup>
+              {isSuperAdmin && (
+                <SidebarGroup>
+                  <SidebarGroupLabel>Super Admin</SidebarGroupLabel>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Tenant Management">
+                      <Link href="/super-admin/tenants">
+                        <Building />
+                        <span>Tenant Management</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarGroup>
+              )}
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>
