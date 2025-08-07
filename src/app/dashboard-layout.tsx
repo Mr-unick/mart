@@ -8,6 +8,7 @@ import {
   Store,
   Settings,
   ShieldCheck,
+  User,
 } from 'lucide-react';
 
 import Header from '@/components/header';
@@ -70,6 +71,14 @@ export default function DashboardLayout({
               </SidebarGroup>
               <SidebarGroup>
                 <SidebarGroupLabel>Internal</SidebarGroupLabel>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Customers">
+                    <Link href="/customers">
+                      <Users />
+                      <span>Customers</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="Route Planner">
                     <Link href="/route-planner">
