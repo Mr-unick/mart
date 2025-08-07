@@ -7,6 +7,7 @@ import {
   Map,
   Store,
   Settings,
+  ShieldCheck,
 } from 'lucide-react';
 
 import Header from '@/components/header';
@@ -74,6 +75,14 @@ export default function DashboardLayout({
                     <Link href="/route-planner">
                       <Map />
                       <span>Route Planner</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Roles & Permissions">
+                    <Link href="/roles-and-permissions">
+                      <ShieldCheck />
+                      <span>Roles &amp; Permissions</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
