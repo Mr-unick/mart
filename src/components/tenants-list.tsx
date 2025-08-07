@@ -46,8 +46,7 @@ export default function TenantsList() {
     );
 
     const handleRowClick = (tenant: Tenant) => {
-        // In a real app, you would navigate to a dynamic route like `/super-admin/tenants/${tenant.id}`
-        console.log("Navigate to tenant details for:", tenant.id);
+        router.push(`/super-admin/tenants/${tenant.id}`);
     };
 
     const handleDeleteClick = (tenant: Tenant) => {

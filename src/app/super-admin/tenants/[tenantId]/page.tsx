@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { mockTenant } from '@/data/mock-data';
+import { mockTenants } from '@/data/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { Palette } from 'lucide-react';
 import React from 'react';
+import DashboardLayout from '@/app/dashboard-layout';
+import { notFound } from 'next/navigation';
 
 const profileSchema = z.object({
     name: z.string().min(1, 'Tenant name is required'),
@@ -27,13 +29,13 @@ const themeSchema = z.object({
     accent: z.string(),
 });
 
-function TenantProfileForm() {
+function TenantProfileForm({ tenant }: { tenant: any }) {
     const { toast } = useToast();
     const form = useForm<z.infer<typeof profileSchema>>({
         resolver: zodResolver(profileSchema),
         defaultValues: {
-            name: mockTenant.name,
-            ...mockTenant.address,
+            name: tenant.name,
+            ...tenant.address,
         }
     });
 
@@ -220,11 +222,19 @@ function ThemeCustomizationForm() {
     );
 }
 
-export default function TenantSettings() {
+export default function TenantDetailsPage({ params }: { params: { tenantId: string } }) {
+    const tenant = mockTenants.find(t => t.id === params.tenantId);
+
+    if (!tenant) {
+        notFound();
+    }
+    
     return (
-        <div className="space-y-8">
-            <TenantProfileForm />
-            <ThemeCustomizationForm />
-        </div>
+        <DashboardLayout>
+            <div className="space-y-8">
+                <TenantProfileForm tenant={tenant} />
+                <ThemeCustomizationForm />
+            </div>
+        </DashboardLayout>
     );
 }

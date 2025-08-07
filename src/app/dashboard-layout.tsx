@@ -113,14 +113,6 @@ export default function DashboardLayout({
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Settings">
-                    <Link href="/settings">
-                      <Settings />
-                      <span>Settings</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               </SidebarGroup>
               {isSuperAdmin && (
                 <SidebarGroup>
