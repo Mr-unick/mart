@@ -1,6 +1,7 @@
+
 "use client";
 
-import { createContext, useState, useMemo, useCallback, useContext, ReactNode } from 'react';
+import { createContext, useState, useMemo, useCallback, useContext, ReactNode, useEffect } from 'react';
 import { mockProducts, mockCustomers, mockCoupons } from '@/data/mock-data';
 import { calculateBill } from '@/lib/billing';
 import type { Bill, Customer, OrderItem } from '@/types';
@@ -29,9 +30,50 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState('');
   const [currentCustomer, setCurrentCustomer] = useState<Customer>(mockCustomers[0]);
+  const [isLoaded, setIsLoaded] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    try {
+      const savedCart = window.localStorage.getItem('cart');
+      if (savedCart) {
+        setCart(new Map(JSON.parse(savedCart)));
+      }
+
+      const savedCoupon = window.localStorage.getItem('appliedCoupon');
+      if (savedCoupon) {
+        setAppliedCoupon(savedCoupon);
+        setCouponInput(savedCoupon);
+      }
+      
+      const savedCustomer = window.localStorage.getItem('currentCustomer');
+      if (savedCustomer) {
+        const customer = JSON.parse(savedCustomer);
+        const existingCustomer = mockCustomers.find(c => c.id === customer.id);
+        if(existingCustomer) {
+            setCurrentCustomer(existingCustomer);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load cart from localStorage", error);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded) {
+        try {
+            window.localStorage.setItem('cart', JSON.stringify(Array.from(cart.entries())));
+            window.localStorage.setItem('appliedCoupon', appliedCoupon);
+            window.localStorage.setItem('currentCustomer', JSON.stringify(currentCustomer));
+        } catch (error) {
+            console.error("Failed to save cart to localStorage", error);
+        }
+    }
+  }, [cart, appliedCoupon, currentCustomer, isLoaded]);
+
   const bill: Bill | null = useMemo(() => {
+    if (!isLoaded) return null;
     return calculateBill({
       cart,
       customer: currentCustomer,
@@ -39,7 +81,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       couponCode: appliedCoupon,
       allCoupons: mockCoupons,
     });
-  }, [cart, currentCustomer, appliedCoupon]);
+  }, [cart, currentCustomer, appliedCoupon, isLoaded]);
 
   const handleApplyCoupon = () => {
     const coupon = mockCoupons.find(c => c.code.toUpperCase() === couponInput.toUpperCase());
@@ -96,6 +138,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     handleUpdateQuantity,
     handleCustomerChange,
   };
+
+  if (!isLoaded) {
+    return null; // Or a loading spinner
+  }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
