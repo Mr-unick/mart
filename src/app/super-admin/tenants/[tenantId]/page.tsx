@@ -141,21 +141,24 @@ function ThemeCustomizationForm() {
         }
     });
 
+    const applyTheme = (values: z.infer<typeof themeSchema>) => {
+        if (typeof window !== 'undefined') {
+            document.documentElement.style.setProperty('--primary', values.primary);
+            document.documentElement.style.setProperty('--background', values.background);
+            document.documentElement.style.setProperty('--accent', values.accent);
+        }
+    }
+
     function onSubmit(values: z.infer<typeof themeSchema>) {
         console.log(values);
+        applyTheme(values);
         toast({ title: "Theme Updated", description: "Color scheme has been updated." });
-        
-        document.documentElement.style.setProperty('--primary', values.primary);
-        document.documentElement.style.setProperty('--background', values.background);
-        document.documentElement.style.setProperty('--accent', values.accent);
     }
     
     // Apply theme on initial load
     React.useEffect(() => {
         const defaultValues = form.getValues();
-        document.documentElement.style.setProperty('--primary', defaultValues.primary);
-        document.documentElement.style.setProperty('--background', defaultValues.background);
-        document.documentElement.style.setProperty('--accent', defaultValues.accent);
+        applyTheme(defaultValues);
     }, [form]);
 
 
