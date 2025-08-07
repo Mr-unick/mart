@@ -12,10 +12,18 @@ export interface User {
   tenantId: string;
 }
 
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
 export interface Customer {
   id: string;
   name: string;
   tenantId: string;
+  address: Address;
   // Map<productId, price>
   specificPrices?: Record<string, number>;
 }
@@ -63,4 +71,40 @@ export interface Bill {
   cgst: number;
   sgst: number;
   grandTotal: number;
+}
+
+export interface Order extends Bill {
+  id: string;
+  customerId: string;
+  customerName: string;
+  deliveryAddress: Address;
+  status: 'pending' | 'in-transit' | 'delivered' | 'cancelled';
+  createdAt: string;
+}
+
+export interface Driver {
+  id: string;
+  name: string;
+}
+
+export interface Vehicle {
+  id: string;
+  make: string;
+  model: string;
+  licensePlate: string;
+}
+
+export interface RouteStop {
+  orderId: string;
+  customerName: string;
+  address: string;
+  sequence: number;
+}
+
+export interface RoutePlan {
+  driverId: string;
+  driverName: string;
+  vehicleId: string;
+  vehicleName: string;
+  stops: RouteStop[];
 }

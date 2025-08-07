@@ -1,4 +1,4 @@
-import type { Product, Customer, Coupon } from '@/types';
+import type { Product, Customer, Coupon, Order, Driver, Vehicle } from '@/types';
 
 export const mockProducts: Product[] = [
   {
@@ -62,6 +62,7 @@ export const mockCustomers: Customer[] = [
     id: 'cust_01',
     name: 'Innovate Corp',
     tenantId: 'tenant_01',
+    address: { street: '123 Tech Avenue', city: 'Silicon Valley', state: 'CA', zip: '94043' },
     specificPrices: {
       prod_001: 89.99, // Special price for Pro Plan
       prod_002: 450.00, // Special price for Enterprise Suite
@@ -71,8 +72,16 @@ export const mockCustomers: Customer[] = [
     id: 'cust_02',
     name: 'Synergy Solutions',
     tenantId: 'tenant_01',
+    address: { street: '456 Business Blvd', city: 'Metropolis', state: 'NY', zip: '10001' },
     specificPrices: {},
   },
+  {
+    id: 'cust_03',
+    name: 'Quantum Dynamics',
+    tenantId: 'tenant_01',
+    address: { street: '789 Innovation Drive', city: 'Boston', state: 'MA', zip: '02110' },
+    specificPrices: {},
+    },
 ];
 
 export const mockCoupons: Coupon[] = [
@@ -90,4 +99,71 @@ export const mockCoupons: Coupon[] = [
     discount: 50,
     tenantId: 'tenant_01',
   },
+];
+
+export const mockOrders: Order[] = [
+    {
+        id: 'ord_01',
+        orderNumber: 'ORD-1672532521-A2B3C',
+        customerId: 'cust_01',
+        customerName: 'Innovate Corp',
+        deliveryAddress: { street: '123 Tech Avenue', city: 'Silicon Valley', state: 'CA', zip: '94043' },
+        items: [],
+        subtotal: 299.97,
+        totalDiscount: 0,
+        couponDiscount: null,
+        taxableAmount: 299.97,
+        totalTax: 53.99,
+        cgst: 26.99,
+        sgst: 26.99,
+        grandTotal: 353.96,
+        status: 'pending',
+        createdAt: '2023-01-01T10:00:00Z',
+    },
+    {
+        id: 'ord_02',
+        orderNumber: 'ORD-1672532522-D4E5F',
+        customerId: 'cust_02',
+        customerName: 'Synergy Solutions',
+        deliveryAddress: { street: '456 Business Blvd', city: 'Metropolis', state: 'NY', zip: '10001' },
+        items: [],
+        subtotal: 149.99,
+        totalDiscount: 0,
+        couponDiscount: null,
+        taxableAmount: 149.99,
+        totalTax: 27,
+        cgst: 13.5,
+        sgst: 13.5,
+        grandTotal: 176.99,
+        status: 'pending',
+        createdAt: '2023-01-01T11:00:00Z',
+    },
+    {
+        id: 'ord_03',
+        orderNumber: 'ORD-1672532523-G6H7I',
+        customerId: 'cust_03',
+        customerName: 'Quantum Dynamics',
+        deliveryAddress: { street: '789 Innovation Drive', city: 'Boston', state: 'MA', zip: '02110' },
+        items: [],
+        subtotal: 999.98,
+        totalDiscount: 0,
+        couponDiscount: null,
+        taxableAmount: 999.98,
+        totalTax: 180,
+        cgst: 90,
+        sgst: 90,
+        grandTotal: 1179.98,
+        status: 'pending',
+        createdAt: '2023-01-01T12:30:00Z',
+    }
+];
+
+export const mockDrivers: Driver[] = [
+    { id: 'driver_01', name: 'John Doe' },
+    { id: 'driver_02', name: 'Jane Smith' },
+];
+
+export const mockVehicles: Vehicle[] = [
+    { id: 'vehicle_01', make: 'Ford', model: 'Transit', licensePlate: 'TRUCK1' },
+    { id: 'vehicle_02', make: 'Mercedes', model: 'Sprinter', licensePlate: 'VANLIFE' },
 ];
