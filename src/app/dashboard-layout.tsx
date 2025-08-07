@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   User,
   Users2,
+  Palette,
 } from 'lucide-react';
 
 import Header from '@/components/header';

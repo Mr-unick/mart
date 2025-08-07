@@ -55,7 +55,7 @@ export default function UsersList() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Users & Roles</CardTitle>
+                        <CardTitle>Users</CardTitle>
                         <CardDescription>Manage users and their assigned roles.</CardDescription>
                     </CardHeader>
                     <CardContent>
