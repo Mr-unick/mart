@@ -17,39 +17,43 @@ model Tenant {
   city   String
   state  String
   zip    String
+  ownerName String
+  ownerEmail String @unique
 
-  ownerName  String
-  ownerEmail String
+  // Relations
+  users     User[]
+  roles     Role[]
+  customers Customer[]
+  products  Product[]
+  orders    Order[]
+  vehicles  Vehicle[]
 
-  products Product[]
-  coupons  Coupon[]
-  users    User[]
-  roles    Role[]
-
-  @@index([name])
+  @@index([ownerEmail])
 }
 
 model User {
-  id      String @id @default(cuid())
-  name    String
-  email   String @unique
-  roleId  String
-  role    Role   @relation(fields: [roleId], references: [id])
-  tenant  Tenant @relation(fields: [tenantId], references: [id])
+  id       String  @id @default(cuid())
+  name     String
+  email    String  @unique
   tenantId String
+  tenant   Tenant  @relation(fields: [tenantId], references: [id])
+  roleId   String
+  role     Role    @relation(fields: [roleId], references: [id])
 
-  @@index([email])
+  @@index([tenantId])
+  @@index([roleId])
 }
 
 model Role {
   id          String       @id @default(cuid())
   name        String
-  tenant      Tenant @relation(fields: [tenantId], references: [id])
   tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
   permissions Permission[] @relation("RolePermissions")
   users       User[]
 
   @@unique([name, tenantId])
+  @@index([tenantId])
 }
 
 model Permission {
@@ -60,56 +64,98 @@ model Permission {
 }
 
 model Product {
-  id           String  @id @default(cuid())
-  name         String
-  description  String  @db.Text
-  imageUrl     String
-  defaultPrice Float
-  dataAiHint   String
-  tenant       Tenant  @relation(fields: [tenantId], references: [id])
-  tenantId     String
+  id             String    @id @default(cuid())
+  name           String
+  description    String
+  defaultPrice   Decimal   @db.Decimal(10, 2)
+  imageUrl       String
+  dataAiHint     String
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id])
+  orderItems     OrderItem[]
+  specificPrices Json? // Example: { "customerId": 12.99 }
+
+  @@index([tenantId])
 }
 
 model Customer {
-  id             String           @id @default(cuid())
-  name           String
-  tenantId       String
-  street         String
-  city           String
-  state          String
-  zip            String
+  id            String  @id @default(cuid())
+  name          String
+  street        String
+  city          String
+  state         String
+  zip           String
+  tenantId      String
+  tenant        Tenant  @relation(fields: [tenantId], references: [id])
+  orders        Order[]
   specificPrices Json?
-  orders         Order[]
+
+  @@index([tenantId])
 }
 
 model Coupon {
-  id       String @id @default(cuid())
-  code     String @unique
-  discount Float
-  type     String // 'flat' or 'percentage'
-  tenant   Tenant @relation(fields: [tenantId], references: [id])
-  tenantId String
+  id        String   @id @default(cuid())
+  code      String   @unique
+  discount  Float
+  type      String // "percentage" or "flat"
+  tenantId  String
 }
 
 model Order {
-  id              String   @id @default(cuid())
-  orderNumber     String   @unique
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
   customerId      String
-  customer        Customer @relation(fields: [customerId], references: [id])
+  customer        Customer    @relation(fields: [customerId], references: [id])
   customerName    String
-  street          String
-  city            String
-  state           String
-  zip             String
-  items           Json // JSON array of OrderItem
-  subtotal        Float
-  totalDiscount   Float
-  couponDiscount  Json? // JSON object for coupon details
-  taxableAmount   Float
-  totalTax        Float
-  cgst            Float
-  sgst            Float
-  grandTotal      Float
-  status          String   @default("pending") // 'pending', 'in-transit', etc.
-  createdAt       DateTime @default(now())
+  deliveryAddress Json
+  items           OrderItem[]
+  subtotal        Decimal     @db.Decimal(10, 2)
+  totalDiscount   Decimal     @db.Decimal(10, 2)
+  couponDiscount  Json?
+  taxableAmount   Decimal     @db.Decimal(10, 2)
+  totalTax        Decimal     @db.Decimal(10, 2)
+  grandTotal      Decimal     @db.Decimal(10, 2)
+  status          OrderStatus @default(PENDING)
+  tenantId        String
+  tenant          Tenant      @relation(fields: [tenantId], references: [id])
+  createdAt       DateTime    @default(now())
+
+  @@index([customerId])
+  @@index([tenantId])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id])
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  lineTotal   Decimal  @db.Decimal(10, 2)
+  description String
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Vehicle {
+    id           String @id @default(cuid())
+    make         String
+    model        String
+    year         Int
+    licensePlate String @unique
+    tenantId     String
+    tenant       Tenant @relation(fields: [tenantId], references: [id])
+
+    @@index([tenantId])
+}
+
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELED
 }

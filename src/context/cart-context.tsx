@@ -2,9 +2,8 @@
 "use client";
 
 import { createContext, useState, useMemo, useCallback, useContext, ReactNode, useEffect } from 'react';
-import { mockProducts, mockCustomers, mockCoupons } from '@/data/mock-data';
 import { calculateBill } from '@/lib/billing';
-import type { Bill, Customer, OrderItem } from '@/types';
+import type { Bill, Customer, OrderItem, Product, Coupon } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface CartContextType {
@@ -14,13 +13,15 @@ interface CartContextType {
   setCouponInput: React.Dispatch<React.SetStateAction<string>>;
   appliedCoupon: string;
   setAppliedCoupon: React.Dispatch<React.SetStateAction<string>>;
-  currentCustomer: Customer;
-  setCurrentCustomer: React.Dispatch<React.SetStateAction<Customer>>;
+  currentCustomer: Customer | null;
+  setCurrentCustomer: React.Dispatch<React.SetStateAction<Customer | null>>;
   bill: Bill | null;
   handleApplyCoupon: () => void;
   handleAddToCart: (productId: string) => void;
   handleUpdateQuantity: (productId: string, newQuantity: number) => void;
   handleCustomerChange: (customerId: string) => void;
+  products: Product[];
+  customers: Customer[];
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -29,10 +30,60 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Map<string, number>>(new Map());
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState('');
-  const [currentCustomer, setCurrentCustomer] = useState<Customer>(mockCustomers[0]);
+  const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const { toast } = useToast();
 
+  // Data fetched from API
+  const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+
+
+  // Fetch initial data from APIs
+  useEffect(() => {
+    async function fetchData() {
+        try {
+            const [productsRes, customersRes, couponsRes] = await Promise.all([
+                fetch('/api/products'),
+                fetch('/api/customers'),
+                fetch('/api/coupons'),
+            ]);
+            
+            const productsData = await productsRes.json();
+            const customersData = await customersRes.json();
+            const couponsData = await couponsRes.json();
+
+            setProducts(productsData);
+            setCustomers(customersData);
+            setCoupons(couponsData);
+
+            // Load saved customer from local storage and set initial customer
+            const savedCustomer = window.localStorage.getItem('currentCustomer');
+            let initialCustomer: Customer | null = null;
+            if (savedCustomer) {
+                const customer = JSON.parse(savedCustomer);
+                const existingCustomer = customersData.find((c: Customer) => c.id === customer.id);
+                if (existingCustomer) {
+                    initialCustomer = existingCustomer;
+                }
+            }
+            // If no saved customer, or saved customer doesn't exist, set to the first one
+            if (!initialCustomer && customersData.length > 0) {
+                initialCustomer = customersData[0];
+            }
+            setCurrentCustomer(initialCustomer);
+
+        } catch (error) {
+            console.error("Failed to fetch initial data", error);
+            toast({ title: "Error", description: "Could not load store data.", variant: "destructive" });
+        }
+    }
+
+    fetchData();
+  }, [toast]);
+
+  // Load cart and coupon from local storage
   useEffect(() => {
     try {
       const savedCart = window.localStorage.getItem('cart');
@@ -45,46 +96,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setAppliedCoupon(savedCoupon);
         setCouponInput(savedCoupon);
       }
-      
-      const savedCustomer = window.localStorage.getItem('currentCustomer');
-      if (savedCustomer) {
-        const customer = JSON.parse(savedCustomer);
-        const existingCustomer = mockCustomers.find(c => c.id === customer.id);
-        if(existingCustomer) {
-            setCurrentCustomer(existingCustomer);
-        }
-      }
     } catch (error) {
       console.error("Failed to load cart from localStorage", error);
     }
     setIsLoaded(true);
   }, []);
 
+  // Save cart, coupon, and customer to local storage
   useEffect(() => {
     if (isLoaded) {
         try {
             window.localStorage.setItem('cart', JSON.stringify(Array.from(cart.entries())));
             window.localStorage.setItem('appliedCoupon', appliedCoupon);
-            window.localStorage.setItem('currentCustomer', JSON.stringify(currentCustomer));
+            if (currentCustomer) {
+              window.localStorage.setItem('currentCustomer', JSON.stringify(currentCustomer));
+            }
         } catch (error) {
-            console.error("Failed to save cart to localStorage", error);
+            console.error("Failed to save to localStorage", error);
         }
     }
   }, [cart, appliedCoupon, currentCustomer, isLoaded]);
 
   const bill: Bill | null = useMemo(() => {
-    if (!isLoaded) return null;
+    if (!isLoaded || !currentCustomer) return null;
     return calculateBill({
       cart,
       customer: currentCustomer,
-      allProducts: mockProducts,
+      allProducts: products,
       couponCode: appliedCoupon,
-      allCoupons: mockCoupons,
+      allCoupons: coupons,
     });
-  }, [cart, currentCustomer, appliedCoupon, isLoaded]);
+  }, [cart, currentCustomer, appliedCoupon, isLoaded, products, coupons]);
 
   const handleApplyCoupon = () => {
-    const coupon = mockCoupons.find(c => c.code.toUpperCase() === couponInput.toUpperCase());
+    const coupon = coupons.find(c => c.code.toUpperCase() === couponInput.toUpperCase());
     if (coupon || couponInput === "") {
       setAppliedCoupon(couponInput);
       if (couponInput !== "") {
@@ -117,7 +162,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleCustomerChange = (customerId: string) => {
-    const customer = mockCustomers.find(c => c.id === customerId);
+    const customer = customers.find(c => c.id === customerId);
     if (customer) {
       setCurrentCustomer(customer);
     }
@@ -137,6 +182,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     handleAddToCart,
     handleUpdateQuantity,
     handleCustomerChange,
+    products,
+    customers,
   };
 
   if (!isLoaded) {

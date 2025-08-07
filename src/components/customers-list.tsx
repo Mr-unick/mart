@@ -1,11 +1,10 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { mockCustomers, mockProducts } from '@/data/mock-data';
 import type { Customer, Product } from '@/types';
 import {
   Card,
@@ -34,6 +33,7 @@ import { Button } from './ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel } from './ui/form';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from './ui/skeleton';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
@@ -41,7 +41,7 @@ const pricingSchema = z.object({
     prices: z.record(z.string(), z.coerce.number().min(0, "Price must be positive").optional())
 });
 
-function CustomerDetailsDialog({ customer, isOpen, onOpenChange }: { customer: Customer | null, isOpen: boolean, onOpenChange: (isOpen: boolean) => void }) {
+function CustomerDetailsDialog({ customer, isOpen, onOpenChange, products }: { customer: Customer | null, isOpen: boolean, onOpenChange: (isOpen: boolean) => void, products: Product[] }) {
     if (!customer) return null;
     const { toast } = useToast();
     
@@ -51,9 +51,16 @@ function CustomerDetailsDialog({ customer, isOpen, onOpenChange }: { customer: C
             prices: customer.specificPrices || {}
         }
     });
+    
+    useEffect(() => {
+        if (customer) {
+            form.reset({ prices: customer.specificPrices || {} });
+        }
+    }, [customer, form]);
 
     const onSubmit = (values: z.infer<typeof pricingSchema>) => {
         console.log("Updated prices for", customer.name, values.prices);
+        // Here you would call an API to update the prices
         toast({
             title: "Pricing Updated",
             description: `Specific pricing for ${customer.name} has been saved.`
@@ -69,13 +76,13 @@ function CustomerDetailsDialog({ customer, isOpen, onOpenChange }: { customer: C
                         <DialogHeader>
                             <DialogTitle>{customer.name}</DialogTitle>
                             <DialogDescription>
-                                {customer.address.street}, {customer.address.city}, {customer.address.state} {customer.address.zip}
+                                {customer.street}, {customer.city}, {customer.state} {customer.zip}
                             </DialogDescription>
                         </DialogHeader>
                         <div>
                             <h3 className="font-semibold mb-4">Customer Specific Pricing</h3>
                             <Card>
-                                <CardContent className="p-0">
+                                <CardContent className="p-0 max-h-[50vh] overflow-y-auto">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -85,7 +92,7 @@ function CustomerDetailsDialog({ customer, isOpen, onOpenChange }: { customer: C
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {mockProducts.map((product: Product) => (
+                                            {products.map((product: Product) => (
                                                 <TableRow key={product.id}>
                                                     <TableCell className="font-medium">{product.name}</TableCell>
                                                     <TableCell>{formatCurrency(product.defaultPrice)}</TableCell>
@@ -127,8 +134,34 @@ function CustomerDetailsDialog({ customer, isOpen, onOpenChange }: { customer: C
 }
 
 export default function CustomersList() {
+    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        async function fetchData() {
+            setLoading(true);
+            try {
+                const [customersRes, productsRes] = await Promise.all([
+                    fetch('/api/customers'),
+                    fetch('/api/products')
+                ]);
+                const customersData = await customersRes.json();
+                const productsData = await productsRes.json();
+                setCustomers(customersData);
+                setProducts(productsData);
+            } catch (error) {
+                console.error("Failed to fetch data:", error);
+                toast({ title: "Error", description: "Could not load customer data.", variant: "destructive" });
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, [toast]);
 
     const handleRowClick = (customer: Customer) => {
         setSelectedCustomer(customer);
@@ -151,17 +184,31 @@ export default function CustomersList() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {mockCustomers.map((customer) => (
-                                <TableRow key={customer.id} onClick={() => handleRowClick(customer)} className="cursor-pointer">
-                                    <TableCell className="font-medium">{customer.name}</TableCell>
-                                    <TableCell>{`${customer.address.city}, ${customer.address.state}`}</TableCell>
-                                </TableRow>
-                            ))}
+                            {loading ? (
+                                Array.from({ length: 5 }).map((_, i) => (
+                                    <TableRow key={i}>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                customers.map((customer) => (
+                                    <TableRow key={customer.id} onClick={() => handleRowClick(customer)} className="cursor-pointer">
+                                        <TableCell className="font-medium">{customer.name}</TableCell>
+                                        <TableCell>{`${customer.city}, ${customer.state}`}</TableCell>
+                                    </TableRow>
+                                ))
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
             </Card>
-            <CustomerDetailsDialog customer={selectedCustomer} isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} />
+            <CustomerDetailsDialog 
+                customer={selectedCustomer} 
+                isOpen={isDialogOpen} 
+                onOpenChange={setIsDialogOpen}
+                products={products}
+            />
         </>
     );
 }

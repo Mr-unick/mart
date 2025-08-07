@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -20,10 +20,11 @@ import {
   TableRow,
 } from './ui/table';
 import { Checkbox } from './ui/checkbox';
-import { mockOrders, mockDrivers, mockVehicles } from '@/data/mock-data';
-import type { Order, RoutePlan } from '@/types';
+import type { Order, RoutePlan, Driver, Vehicle } from '@/types';
 import { generateRoutePlan } from '@/ai/flows/route-planner-flow';
 import { Bot, Loader2, MapPinned, Truck } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from './ui/skeleton';
 
 const RoutePlanDisplay = ({ plans }: { plans: RoutePlan[] }) => {
   return (
@@ -63,9 +64,39 @@ const RoutePlanDisplay = ({ plans }: { plans: RoutePlan[] }) => {
 };
 
 export default function RoutePlanner() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [routePlans, setRoutePlans] = useState<RoutePlan[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    async function fetchData() {
+        setLoading(true);
+        try {
+            const [ordersRes, driversRes, vehiclesRes] = await Promise.all([
+                fetch('/api/orders?status=PENDING'),
+                fetch('/api/drivers'),
+                fetch('/api/vehicles')
+            ]);
+            const ordersData = await ordersRes.json();
+            const driversData = await driversRes.json();
+            const vehiclesData = await vehiclesRes.json();
+            setOrders(ordersData);
+            setDrivers(driversData);
+            setVehicles(vehiclesData);
+        } catch (error) {
+            console.error("Failed to fetch data:", error);
+            toast({ title: "Error", description: "Could not load data for route planner.", variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
+    }
+    fetchData();
+  }, [toast]);
 
   const handleSelectOrder = (orderId: string) => {
     setSelectedOrders((prev) => {
@@ -81,23 +112,26 @@ export default function RoutePlanner() {
 
   const handleGeneratePlan = async () => {
     if (selectedOrders.size === 0) return;
-    setIsLoading(true);
+    setIsGenerating(true);
     setRoutePlans([]);
     try {
-        const ordersToRoute = mockOrders.filter((o) => selectedOrders.has(o.id));
+        const ordersToRoute = orders.filter((o) => selectedOrders.has(o.id));
         const result = await generateRoutePlan({
             orders: ordersToRoute,
-            drivers: mockDrivers,
-            vehicles: mockVehicles,
+            drivers: drivers,
+            vehicles: vehicles,
             warehouseAddress: "1 Rocket Road, Hawthorne, CA 90250"
         });
         setRoutePlans(result);
     } catch (error) {
         console.error("Failed to generate route plan:", error);
+        toast({ title: "Error", description: "Failed to generate route plan.", variant: "destructive" });
     } finally {
-        setIsLoading(false);
+        setIsGenerating(false);
     }
   };
+
+  const pendingOrders = orders.filter(o => o.status === 'PENDING');
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -115,10 +149,10 @@ export default function RoutePlanner() {
                     <TableRow>
                         <TableHead className="w-[50px]">
                         <Checkbox
-                            checked={selectedOrders.size === mockOrders.length && mockOrders.length > 0}
+                            checked={selectedOrders.size === pendingOrders.length && pendingOrders.length > 0}
                             onCheckedChange={(checked) => {
                             setSelectedOrders(
-                                checked ? new Set(mockOrders.map((o) => o.id)) : new Set()
+                                checked ? new Set(pendingOrders.map((o) => o.id)) : new Set()
                             );
                             }}
                         />
@@ -130,7 +164,18 @@ export default function RoutePlanner() {
                     </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {mockOrders.map((order: Order) => (
+                    {loading ? (
+                        Array.from({length: 5}).map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell><Checkbox disabled /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                            </TableRow>
+                        ))
+                    ) : (
+                      pendingOrders.map((order: Order) => (
                         <TableRow key={order.id}>
                         <TableCell>
                             <Checkbox
@@ -142,16 +187,16 @@ export default function RoutePlanner() {
                         <TableCell>{order.customerName}</TableCell>
                         <TableCell>{`${order.deliveryAddress.street}, ${order.deliveryAddress.city}`}</TableCell>
                         <TableCell>
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(order.grandTotal)}
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(order.grandTotal))}
                         </TableCell>
                         </TableRow>
-                    ))}
+                    )))}
                     </TableBody>
                 </Table>
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={handleGeneratePlan} disabled={selectedOrders.size === 0 || isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+                    <Button onClick={handleGeneratePlan} disabled={selectedOrders.size === 0 || isGenerating}>
+                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
                         Generate Plan
                     </Button>
                 </CardFooter>
@@ -169,13 +214,13 @@ export default function RoutePlanner() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-            {isLoading && (
+            {isGenerating && (
               <div className="flex flex-col items-center justify-center gap-4 py-16">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   <p className="text-muted-foreground">Generating optimized routes...</p>
               </div>
             )}
-            {!isLoading && routePlans.length === 0 && (
+            {!isGenerating && routePlans.length === 0 && (
                 <div className="flex items-center justify-center h-48 border-2 border-dashed rounded-lg">
                     <p className="text-center text-muted-foreground">No route plan generated yet.</p>
                 </div>

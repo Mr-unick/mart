@@ -1,17 +1,11 @@
+
 // This file is now primarily for client-side type definitions
 // that may not directly map to the Prisma schema, or for API route types.
 // The source of truth for database models is prisma/schema.prisma.
 import type { Prisma } from '@prisma/client';
 
 // We can export Prisma-generated types
-export type { Tenant, User, Role, Permission, Product, Customer, Coupon, Order } from '@prisma/client';
-
-export interface Address {
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-}
+export type { Tenant, User, Role, Permission, Product, Customer, Coupon, Order, Vehicle, OrderItem as PrismaOrderItem } from '@prisma/client';
 
 // Example of extending a Prisma type for client-side use
 export type UserWithRoleAndPermissions = Prisma.UserGetPayload<{
@@ -55,13 +49,6 @@ export interface Bill {
 export interface Driver {
   id: string;
   name: string;
-}
-
-export interface Vehicle {
-  id: string;
-  make: string;
-  model: string;
-  licensePlate: string;
 }
 
 export interface RouteStop {

@@ -1,9 +1,8 @@
 
 "use client";
 
-import { useState } from 'react';
-import { mockOrders } from '@/data/mock-data';
-import type { Order } from '@/types';
+import { useState, useEffect } from 'react';
+import type { Order, OrderItem as OrderItemType, Product } from '@/types';
 import {
   Card,
   CardContent,
@@ -28,11 +27,16 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from './ui/skeleton';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
+const formatDate = (dateString: string | Date) => new Date(dateString).toLocaleDateString();
 
-function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | null, isOpen: boolean, onOpenChange: (isOpen: boolean) => void }) {
+// Prisma returns decimal values as strings, let's ensure they are numbers
+type OrderWithItems = Order & { items: (OrderItemType & { product: Product })[] };
+
+function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: OrderWithItems | null, isOpen: boolean, onOpenChange: (isOpen: boolean) => void }) {
     if (!order) return null;
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -51,11 +55,11 @@ function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | nu
                         </p>
                     </div>
                     <Separator />
-                    <div className="space-y-2">
+                    <div className="space-y-2 max-h-[30vh] overflow-y-auto">
                         {order.items.map((item, index) => (
                              <div key={index} className="flex justify-between items-center">
                                 <span className="text-sm">{item.quantity}x {item.product.name}</span>
-                                <span className="text-sm">{formatCurrency(item.lineTotal)}</span>
+                                <span className="text-sm">{formatCurrency(Number(item.lineTotal))}</span>
                             </div>
                         ))}
                     </div>
@@ -63,23 +67,23 @@ function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | nu
                      <div className="space-y-1 text-sm">
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Subtotal</span>
-                            <span>{formatCurrency(order.subtotal)}</span>
+                            <span>{formatCurrency(Number(order.subtotal))}</span>
                         </div>
                         {order.couponDiscount && (
                             <div className="flex justify-between text-accent">
                                 <span className="text-muted-foreground">Coupon ({order.couponDiscount.code})</span>
-                                <span>- {formatCurrency(order.couponDiscount.amount)}</span>
+                                <span>- {formatCurrency(Number(order.couponDiscount.amount))}</span>
                             </div>
                         )}
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Taxes</span>
-                            <span>{formatCurrency(order.totalTax)}</span>
+                            <span>{formatCurrency(Number(order.totalTax))}</span>
                         </div>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-bold">
                         <span>Grand Total</span>
-                        <span>{formatCurrency(order.grandTotal)}</span>
+                        <span>{formatCurrency(Number(order.grandTotal))}</span>
                     </div>
                 </div>
             </DialogContent>
@@ -88,10 +92,31 @@ function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | nu
 }
 
 export default function OrdersList() {
-    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    const [orders, setOrders] = useState<OrderWithItems[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedOrder, setSelectedOrder] = useState<OrderWithItems | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const { toast } = useToast();
 
-    const handleRowClick = (order: Order) => {
+     useEffect(() => {
+        async function fetchOrders() {
+            setLoading(true);
+            try {
+                const res = await fetch('/api/orders');
+                if (!res.ok) throw new Error("Failed to fetch orders");
+                const data = await res.json();
+                setOrders(data);
+            } catch (error) {
+                console.error("Failed to fetch orders:", error);
+                toast({ title: "Error", description: "Could not load orders.", variant: "destructive" });
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchOrders();
+    }, [toast]);
+
+    const handleRowClick = (order: OrderWithItems) => {
         setSelectedOrder(order);
         setIsDialogOpen(true);
     }
@@ -115,17 +140,29 @@ export default function OrdersList() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {mockOrders.map((order) => (
-                                <TableRow key={order.id} onClick={() => handleRowClick(order)} className="cursor-pointer">
-                                    <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                                    <TableCell>{order.customerName}</TableCell>
-                                    <TableCell>{formatDate(order.createdAt)}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={order.status === 'delivered' ? 'default' : 'secondary'}>{order.status}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">{formatCurrency(order.grandTotal)}</TableCell>
-                                </TableRow>
-                            ))}
+                            {loading ? (
+                                Array.from({length: 5}).map((_, i) => (
+                                    <TableRow key={i}>
+                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                        <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                orders.map((order) => (
+                                    <TableRow key={order.id} onClick={() => handleRowClick(order)} className="cursor-pointer">
+                                        <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                                        <TableCell>{order.customerName}</TableCell>
+                                        <TableCell>{formatDate(order.createdAt)}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={order.status === 'DELIVERED' ? 'default' : 'secondary'}>{order.status}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">{formatCurrency(Number(order.grandTotal))}</TableCell>
+                                    </TableRow>
+                                ))
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
