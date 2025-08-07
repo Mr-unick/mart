@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
 
@@ -27,9 +28,7 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - / (the login page itself)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).+)',
-    '/'
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
