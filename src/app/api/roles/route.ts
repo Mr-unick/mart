@@ -1,18 +1,20 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { verifyAuth } from '@/lib/auth';
 
 export async function GET() {
-  // In a real multi-tenant app, you'd get the tenantId from the user's session.
-  try {
-    const tenant = await prisma.tenant.findFirst({
-        where: { id: { not: 'system' }}
-    });
+  const { user } = await verifyAuth();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    const whereClause = tenant ? { tenantId: tenant.id } : { tenantId: 'system' };
+  try {
+    // Super admins can see system roles, tenants see their own roles.
+    const tenantId = user.tenantId === 'system' ? 'system' : user.tenantId;
 
     const roles = await prisma.role.findMany({
-        where: whereClause
+        where: { tenantId: tenantId }
     });
     return NextResponse.json(roles);
   } catch (error) {

@@ -1,20 +1,17 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { verifyAuth } from '@/lib/auth';
 
 export async function GET() {
-  // In a real multi-tenant app, you'd get the tenantId from the user's session.
+  const { user } = await verifyAuth();
+  if (!user || user.tenantId === 'system') {
+    return NextResponse.json([]);
+  }
+
   try {
-    const tenant = await prisma.tenant.findFirst({
-        where: { id: { not: 'system' }}
-    });
-
-    if (!tenant) {
-        return NextResponse.json([]);
-    }
-
     const users = await prisma.user.findMany({
-        where: { tenantId: tenant.id }
+        where: { tenantId: user.tenantId }
     });
     return NextResponse.json(users);
   } catch (error) {

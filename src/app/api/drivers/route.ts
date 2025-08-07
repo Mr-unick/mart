@@ -1,13 +1,18 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { verifyAuth } from '@/lib/auth';
 
 export async function GET() {
-  // This is a simplified version. In a real app, you might have a dedicated Driver model.
-  // For now, let's assume any user with a "Driver" role is a driver.
+  const { user } = await verifyAuth();
+  if (!user || user.tenantId === 'system') {
+    return NextResponse.json([]);
+  }
+
   try {
     const drivers = await prisma.user.findMany({
       where: {
+        tenantId: user.tenantId,
         role: {
           name: 'Driver'
         }

@@ -2,22 +2,19 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import type { OrderStatus } from '@prisma/client';
+import { verifyAuth } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
-  // In a real multi-tenant app, you'd get the tenantId from the user's session.
+  const { user } = await verifyAuth();
+  if (!user || user.tenantId === 'system') {
+    return NextResponse.json([]);
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const status = searchParams.get('status') as OrderStatus | null;
 
   try {
-     const tenant = await prisma.tenant.findFirst({
-        where: { id: { not: 'system' }}
-    });
-    
-    if (!tenant) {
-        return NextResponse.json([]);
-    }
-    
-    const whereClause: { tenantId: string, status?: OrderStatus } = { tenantId: tenant.id };
+    const whereClause: { tenantId: string, status?: OrderStatus } = { tenantId: user.tenantId };
     if (status) {
         whereClause.status = status;
     }

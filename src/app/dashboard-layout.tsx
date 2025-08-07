@@ -12,7 +12,6 @@ import {
   Users2,
   Building,
 } from 'lucide-react';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Header from '@/components/header';
 import {
@@ -29,7 +28,6 @@ import {
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { CartProvider } from '@/context/cart-context';
-import { prisma } from '@/lib/db';
 import { verifyAuth } from '@/lib/auth';
 
 export default async function DashboardLayout({
@@ -37,12 +35,12 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const auth = await verifyAuth();
-  if (!auth.user) {
+  const { user } = await verifyAuth();
+  if (!user) {
     return redirect('/');
   }
 
-  const isSuperAdmin = auth.user.role.name === 'Super Admin';
+  const isSuperAdmin = user.role.name === 'Super Admin';
 
   return (
     <CartProvider>

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { login } from '@/lib/auth'; // We'll create this action
+import { login } from '@/lib/auth';
 import { Building } from 'lucide-react';
 
 export default function LoginPage() {
@@ -67,6 +67,7 @@ export default function LoginPage() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                placeholder="any password will work"
                             />
                         </div>
                         <Button type="submit" className="w-full" disabled={loading}>
