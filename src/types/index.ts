@@ -1,16 +1,28 @@
+
 export interface Tenant {
   id: string;
   name: string;
   address: Address;
 }
 
-export type Role = 'admin' | 'internal' | 'customer';
+export interface Permission {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  tenantId: string;
+  permissions: string[]; // Array of permission IDs
+}
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: Role;
+  roleId: string;
   tenantId: string;
 }
 

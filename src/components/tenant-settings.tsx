@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -11,7 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { mockTenant, mockUsers } from '@/data/mock-data';
+import { mockTenant, mockUsers, mockRoles, mockPermissions } from '@/data/mock-data';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { Checkbox } from './ui/checkbox';
 import { Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,7 +32,15 @@ const usersSchema = z.object({
         id: z.string(),
         name: z.string().min(1, 'Name is required'),
         email: z.string().email('Invalid email address'),
-        role: z.enum(['admin', 'internal', 'customer']),
+        roleId: z.string().min(1, 'Role is required'),
+    }))
+});
+
+const rolesSchema = z.object({
+    roles: z.array(z.object({
+        id: z.string(),
+        name: z.string().min(1, "Role name is required"),
+        permissions: z.array(z.string()),
     }))
 });
 
@@ -158,7 +169,7 @@ function UsersAndRolesForm() {
             id: `user_${Math.random().toString(36).substring(2, 9)}`,
             name: '',
             email: '',
-            role: 'customer'
+            roleId: mockRoles.find(r => r.name === 'Customer')?.id || ''
         })
     }
 
@@ -168,7 +179,7 @@ function UsersAndRolesForm() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Users & Roles</CardTitle>
-                        <CardDescription>Manage users and their permissions.</CardDescription>
+                        <CardDescription>Manage users and their assigned roles.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -214,7 +225,7 @@ function UsersAndRolesForm() {
                                         <TableCell>
                                             <FormField
                                                 control={form.control}
-                                                name={`users.${index}.role`}
+                                                name={`users.${index}.roleId`}
                                                 render={({ field }) => (
                                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                         <FormControl>
@@ -223,9 +234,9 @@ function UsersAndRolesForm() {
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
-                                                            <SelectItem value="admin">Admin</SelectItem>
-                                                            <SelectItem value="internal">Internal</SelectItem>
-                                                            <SelectItem value="customer">Customer</SelectItem>
+                                                            {mockRoles.map(role => (
+                                                                <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                                                            ))}
                                                         </SelectContent>
                                                     </Select>
                                                 )}
@@ -251,19 +262,121 @@ function UsersAndRolesForm() {
     )
 }
 
+function RolesAndPermissionsForm() {
+    const { toast } = useToast();
+    const form = useForm<z.infer<typeof rolesSchema>>({
+        resolver: zodResolver(rolesSchema),
+        defaultValues: {
+            roles: mockRoles,
+        }
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "roles",
+    });
+
+    function onSubmit(values: z.infer<typeof rolesSchema>) {
+        console.log(values);
+        toast({ title: "Roles Updated", description: "Roles and permissions have been saved successfully." });
+    }
+
+    const onAddNewRole = () => {
+        append({
+            id: `role_${Math.random().toString(36).substring(2, 9)}`,
+            name: 'New Role',
+            permissions: []
+        });
+    }
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Roles & Permissions</CardTitle>
+                        <CardDescription>Define roles and assign permissions to them.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Accordion type="multiple" className="w-full" defaultValue={fields.map(f => f.id)}>
+                            {fields.map((field, index) => (
+                                <AccordionItem key={field.id} value={field.id}>
+                                    <AccordionTrigger>
+                                        <div className="flex items-center gap-4 flex-grow">
+                                            <FormField
+                                                control={form.control}
+                                                name={`roles.${index}.name`}
+                                                render={({ field }) => (
+                                                    <FormItem className="flex-grow">
+                                                        <FormControl>
+                                                            <Input {...field} onClick={(e) => e.stopPropagation()}/>
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); remove(index);}}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        {mockPermissions.map((permission) => (
+                                            <FormField
+                                                key={permission.id}
+                                                control={form.control}
+                                                name={`roles.${index}.permissions`}
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value?.includes(permission.id)}
+                                                                onCheckedChange={(checked) => {
+                                                                    return checked
+                                                                        ? field.onChange([...field.value, permission.id])
+                                                                        : field.onChange(field.value?.filter((value) => value !== permission.id))
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <div className="space-y-1 leading-none">
+                                                            <FormLabel>{permission.name}</FormLabel>
+                                                            <p className="text-xs text-muted-foreground">{permission.description}</p>
+                                                        </div>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        ))}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    </CardContent>
+                    <CardFooter className="flex justify-between">
+                        <Button type="button" variant="outline" onClick={onAddNewRole}>Add New Role</Button>
+                        <Button type="submit">Save Roles</Button>
+                    </CardFooter>
+                </Card>
+            </form>
+        </Form>
+    );
+}
 
 export default function TenantSettings() {
     return (
         <Tabs defaultValue="profile">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="profile">Profile</TabsTrigger>
                 <TabsTrigger value="users">Users & Roles</TabsTrigger>
+                <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
             </TabsList>
             <TabsContent value="profile">
                 <TenantProfileForm />
             </TabsContent>
             <TabsContent value="users">
                 <UsersAndRolesForm />
+            </TabsContent>
+            <TabsContent value="roles">
+                <RolesAndPermissionsForm />
             </TabsContent>
         </Tabs>
     );

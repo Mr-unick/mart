@@ -1,4 +1,5 @@
-import type { Product, Customer, Coupon, Order, Driver, Vehicle, Tenant, User } from '@/types';
+
+import type { Product, Customer, Coupon, Order, Driver, Vehicle, Tenant, User, Role, Permission } from '@/types';
 
 export const mockTenant: Tenant = {
   id: 'tenant_01',
@@ -11,10 +12,48 @@ export const mockTenant: Tenant = {
   }
 };
 
+export const mockPermissions: Permission[] = [
+    { id: 'perm_view_products', name: 'View Products', description: 'Can view the product catalog.' },
+    { id: 'perm_manage_cart', name: 'Manage Cart', description: 'Can add/remove items from the cart.' },
+    { id: 'perm_view_orders', name: 'View Orders', description: 'Can view their own order history.' },
+    { id: 'perm_manage_routes', name: 'Manage Route Planner', description: 'Can access and operate the route planner.' },
+    { id: 'perm_manage_settings', name: 'Manage Tenant Settings', description: 'Can edit tenant profile.' },
+    { id: 'perm_manage_users', name: 'Manage Users', description: 'Can add, edit, and remove users.' },
+    { id: 'perm_manage_roles', name: 'Manage Roles', description: 'Can define roles and assign permissions.' },
+];
+
+export const mockRoles: Role[] = [
+    {
+        id: 'role_admin',
+        name: 'Admin',
+        tenantId: 'tenant_01',
+        permissions: mockPermissions.map(p => p.id), // Admin has all permissions
+    },
+    {
+        id: 'role_internal',
+        name: 'Internal',
+        tenantId: 'tenant_01',
+        permissions: [
+            'perm_view_products',
+            'perm_manage_routes',
+        ],
+    },
+    {
+        id: 'role_customer',
+        name: 'Customer',
+        tenantId: 'tenant_01',
+        permissions: [
+            'perm_view_products',
+            'perm_manage_cart',
+            'perm_view_orders',
+        ]
+    }
+];
+
 export const mockUsers: User[] = [
-    { id: 'user_01', name: 'Alice Admin', email: 'alice@example.com', role: 'admin', tenantId: 'tenant_01' },
-    { id: 'user_02', name: 'Bob Internal', email: 'bob@example.com', role: 'internal', tenantId: 'tenant_01' },
-    { id: 'user_03', name: 'Charlie Customer', email: 'charlie@example.com', role: 'customer', tenantId: 'tenant_01' },
+    { id: 'user_01', name: 'Alice Admin', email: 'alice@example.com', roleId: 'role_admin', tenantId: 'tenant_01' },
+    { id: 'user_02', name: 'Bob Internal', email: 'bob@example.com', roleId: 'role_internal', tenantId: 'tenant_01' },
+    { id: 'user_03', name: 'Charlie Customer', email: 'charlie@example.com', roleId: 'role_customer', tenantId: 'tenant_01' },
 ];
 
 export const mockProducts: Product[] = [
