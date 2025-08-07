@@ -6,6 +6,7 @@ import {
   ShoppingCart,
   Map,
   Store,
+  Settings,
 } from 'lucide-react';
 
 import Header from '@/components/header';
@@ -73,6 +74,14 @@ export default function DashboardLayout({
                     <Link href="/route-planner">
                       <Map />
                       <span>Route Planner</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Settings">
+                    <Link href="/settings">
+                      <Settings />
+                      <span>Settings</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

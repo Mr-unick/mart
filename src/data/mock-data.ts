@@ -1,4 +1,21 @@
-import type { Product, Customer, Coupon, Order, Driver, Vehicle } from '@/types';
+import type { Product, Customer, Coupon, Order, Driver, Vehicle, Tenant, User } from '@/types';
+
+export const mockTenant: Tenant = {
+  id: 'tenant_01',
+  name: 'Innovate Corp Tenant',
+  address: {
+    street: '123 Tenant Main St',
+    city: 'Businessville',
+    state: 'CA',
+    zip: '90210'
+  }
+};
+
+export const mockUsers: User[] = [
+    { id: 'user_01', name: 'Alice Admin', email: 'alice@example.com', role: 'admin', tenantId: 'tenant_01' },
+    { id: 'user_02', name: 'Bob Internal', email: 'bob@example.com', role: 'internal', tenantId: 'tenant_01' },
+    { id: 'user_03', name: 'Charlie Customer', email: 'charlie@example.com', role: 'customer', tenantId: 'tenant_01' },
+];
 
 export const mockProducts: Product[] = [
   {

@@ -1,14 +1,16 @@
 export interface Tenant {
   id: string;
   name: string;
-  // other tenant info
+  address: Address;
 }
+
+export type Role = 'admin' | 'internal' | 'customer';
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'internal' | 'customer';
+  role: Role;
   tenantId: string;
 }
 
