@@ -1,5 +1,5 @@
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, CouponType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -16,6 +16,9 @@ async function main() {
         { id: 'perm_manage_users', name: 'Manage Users', description: 'Can add, edit, and remove users.' },
         { id: 'perm_manage_roles', name: 'Manage Roles', description: 'Can define roles and assign permissions.' },
         { id: 'perm_manage_tenants', name: 'Manage Tenants', description: 'Can create, edit, and delete tenants.' },
+        { id: 'perm_manage_products', name: 'Manage Products', description: 'Can create, edit, and delete products.' },
+        { id: 'perm_manage_coupons', name: 'Manage Coupons', description: 'Can create, edit, and delete coupons.' },
+        { id: 'perm_manage_banners', name: 'Manage Banners', description: 'Can create, edit, and delete banners.' },
     ];
     for (const p of permissionsData) {
         await prisma.permission.upsert({
@@ -106,6 +109,9 @@ async function main() {
                     { id: 'perm_manage_settings' },
                     { id: 'perm_manage_users' },
                     { id: 'perm_manage_roles' },
+                    { id: 'perm_manage_products' },
+                    { id: 'perm_manage_coupons' },
+                    { id: 'perm_manage_banners' },
                 ]
             }
         },
@@ -125,6 +131,39 @@ async function main() {
         },
     });
     console.log('Seeded Tenant Admin user for sample tenant');
+    
+    // --- Seed Products for Sample Tenant ---
+    const productsData = [
+        { name: 'Cloud-Powered AI Mug', description: 'A coffee mug that uses cloud AI to keep your drink at the perfect temperature.', defaultPrice: 29.99, imageUrl: 'https://placehold.co/600x400.png', dataAiHint: 'coffee mug' },
+        { name: 'Quantum-Entangled Socks', description: 'A pair of socks that are quantumly entangled. Lose one, and the other disappears too!', defaultPrice: 15.50, imageUrl: 'https://placehold.co/600x400.png', dataAiHint: 'pair socks' },
+        { name: 'Blockchain-Verified Water Bottle', description: 'Stay hydrated with a water bottle whose authenticity is secured on the blockchain.', defaultPrice: 45.00, imageUrl: 'https://placehold.co/600x400.png', dataAiHint: 'water bottle' },
+        { name: 'Neural-Interface VR Headset', description: 'Experience virtual reality like never before with a direct neural interface.', defaultPrice: 899.00, imageUrl: 'https://placehold.co/600x400.png', dataAiHint: 'vr headset' },
+        { name: 'Self-Driving Skateboard', description: 'The future of personal transport. Tell it where to go, and it takes you there.', defaultPrice: 1200.00, imageUrl: 'https://placehold.co/600x400.png', dataAiHint: 'electric skateboard' },
+        { name: 'AI-Powered Personal Chef', description: 'A robotic chef that learns your preferences and cooks gourmet meals for you.', defaultPrice: 2500.00, imageUrl: 'https://placehold.co/600x400.png', dataAiHint: 'robot chef' }
+    ];
+
+    for (const p of productsData) {
+        await prisma.product.create({
+            data: { ...p, tenantId: sampleTenant.id },
+        });
+    }
+    console.log('Seeded products for sample tenant');
+
+    // --- Seed Coupons for Sample Tenant ---
+    const couponsData = [
+      { code: 'SUMMER20', type: CouponType.PERCENTAGE, discount: 20, tenantId: sampleTenant.id, isActive: true },
+      { code: 'SAVE10', type: CouponType.FIXED, discount: 10, tenantId: sampleTenant.id, isActive: true },
+      { code: 'EXPIRED', type: CouponType.PERCENTAGE, discount: 15, tenantId: sampleTenant.id, isActive: false },
+    ];
+
+    for (const c of couponsData) {
+        await prisma.coupon.upsert({
+            where: { code: c.code },
+            update: c,
+            create: c,
+        });
+    }
+    console.log('Seeded coupons for sample tenant');
 
 
     console.log(`Seeding finished.`);

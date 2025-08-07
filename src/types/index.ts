@@ -5,7 +5,7 @@
 import type { Prisma } from '@prisma/client';
 
 // We can export Prisma-generated types
-export type { Tenant, User, Role, Permission, Product, Customer, Coupon, Order, Vehicle, OrderItem as PrismaOrderItem } from '@prisma/client';
+export type { Tenant, User, Role, Permission, Product, Customer, Coupon, Order, Vehicle, OrderItem as PrismaOrderItem, Banner } from '@prisma/client';
 
 // Example of extending a Prisma type for client-side use
 export type UserWithRoleAndPermissions = Prisma.UserGetPayload<{

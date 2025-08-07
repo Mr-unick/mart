@@ -9,13 +9,32 @@ export async function GET() {
     return NextResponse.json([]);
   }
 
+  const searchParams = request.nextUrl.searchParams;
+  const limit = searchParams.get('limit');
+  const onlyActive = searchParams.get('active') === 'true';
+
   try {
-    const products = await prisma.product.findMany({
-      where: { tenantId: user.tenantId }
-    });
-    return NextResponse.json(products);
+    const findOptions: any = {
+      where: { 
+        tenantId: user.tenantId,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    };
+
+    if (onlyActive) {
+      findOptions.where.isActive = true;
+    }
+    
+    if (limit) {
+      findOptions.take = parseInt(limit);
+    }
+
+    const banners = await prisma.banner.findMany(findOptions);
+    return NextResponse.json(banners);
   } catch (error) {
-    console.error("Failed to fetch products:", error);
+    console.error("Failed to fetch banners:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -28,22 +47,20 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { name, description, defaultPrice, imageUrl, dataAiHint } = body;
+        const { title, imageUrl, isActive } = body;
         
-        const newProduct = await prisma.product.create({
+        const newBanner = await prisma.banner.create({
             data: {
-                name,
-                description,
-                defaultPrice: Number(defaultPrice),
+                title,
                 imageUrl,
-                dataAiHint,
+                isActive,
                 tenantId: user.tenantId,
             }
         });
 
-        return NextResponse.json(newProduct, { status: 201 });
+        return NextResponse.json(newBanner, { status: 201 });
     } catch (error) {
-        console.error('Failed to create product:', error);
+        console.error('Failed to create banner:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

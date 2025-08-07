@@ -1,57 +1,66 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-generator client {
-  provider = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+generator client {
+  provider        = "prisma-client-js"
+  // The following line is needed for the Docker image to work correctly.
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
 model Tenant {
-  id     String @id @default(cuid())
-  name   String
-  street String
-  city   String
-  state  String
-  zip    String
-  ownerName String
-  ownerEmail String @unique
+  id         String @id @default(cuid())
+  name       String
+  street     String
+  city       String
+  state      String
+  zip        String
+  ownerName  String
+  ownerEmail String
 
-  // Relations
   users     User[]
   roles     Role[]
   customers Customer[]
-  products  Product[]
   orders    Order[]
   vehicles  Vehicle[]
+  products  Product[]
+  banners   Banner[]
+  coupons   Coupon[]
 
-  @@index([ownerEmail])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model User {
-  id       String  @id @default(cuid())
-  name     String
-  email    String  @unique
-  tenantId String
-  tenant   Tenant  @relation(fields: [tenantId], references: [id])
-  roleId   String
-  role     Role    @relation(fields: [roleId], references: [id])
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  roleId    String
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  role   Role   @relation(fields: [roleId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId])
-  @@index([roleId])
 }
 
 model Role {
   id          String       @id @default(cuid())
   name        String
   tenantId    String
-  tenant      Tenant       @relation(fields: [tenantId], references: [id])
-  permissions Permission[] @relation("RolePermissions")
-  users       User[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  permissions Permission[]
+
+  users  User[]
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@unique([name, tenantId])
   @@index([tenantId])
@@ -61,102 +70,134 @@ model Permission {
   id          String @id @default(cuid())
   name        String @unique
   description String
-  roles       Role[] @relation("RolePermissions")
+
+  roles Role[]
 }
 
 model Product {
-  id             String    @id @default(cuid())
-  name           String
-  description    String
-  defaultPrice   Decimal   @db.Decimal(10, 2)
-  imageUrl       String
-  dataAiHint     String
-  tenantId       String
-  tenant         Tenant    @relation(fields: [tenantId], references: [id])
-  orderItems     OrderItem[]
-  specificPrices Json? // Example: { "customerId": 12.99 }
+  id           String  @id @default(cuid())
+  name         String
+  description  String  @db.Text
+  defaultPrice Decimal @db.Decimal(10, 2)
+  imageUrl     String
+  dataAiHint   String  @default("product image")
+  tenantId     String
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  items  OrderItem[]
 
   @@index([tenantId])
 }
 
 model Customer {
-  id            String  @id @default(cuid())
-  name          String
-  street        String
-  city          String
-  state         String
-  zip           String
-  tenantId      String
-  tenant        Tenant  @relation(fields: [tenantId], references: [id])
-  orders        Order[]
+  id     String  @id @default(cuid())
+  name   String
+  street String
+  city   String
+  state  String
+  zip    String
+  // Storing specific prices as a JSON object
+  // e.g., { "prod_123": 10.50, "prod_456": 20.00 }
   specificPrices Json?
+  tenantId       String
+  
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  orders Order[]
 
   @@index([tenantId])
 }
 
 model Coupon {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  discount  Float
-  type      String // "percentage" or "flat"
-  tenantId  String
+  id       String      @id @default(cuid())
+  code     String      @unique
+  type     CouponType
+  discount Decimal     @db.Decimal(10, 2)
+  isActive Boolean     @default(true)
+  tenantId String
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+enum CouponType {
+  FIXED
+  PERCENTAGE
 }
 
 model Order {
   id              String      @id @default(cuid())
   orderNumber     String      @unique
-  customerId      String
-  customer        Customer    @relation(fields: [customerId], references: [id])
   customerName    String
-  deliveryAddress Json
-  items           OrderItem[]
+  deliveryAddress Json // Store as JSON: { street, city, state, zip }
   subtotal        Decimal     @db.Decimal(10, 2)
-  totalDiscount   Decimal     @db.Decimal(10, 2)
-  couponDiscount  Json?
+  totalDiscount   Decimal     @db.Decimal(10, 2) @default(0)
+  couponDiscount  Json? // Store as JSON: { code, amount }
   taxableAmount   Decimal     @db.Decimal(10, 2)
   totalTax        Decimal     @db.Decimal(10, 2)
   grandTotal      Decimal     @db.Decimal(10, 2)
   status          OrderStatus @default(PENDING)
   tenantId        String
-  tenant          Tenant      @relation(fields: [tenantId], references: [id])
-  createdAt       DateTime    @default(now())
+  customerId      String
 
-  @@index([customerId])
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  items    OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([tenantId])
+  @@index([customerId])
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id])
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id])
+  id          String  @id @default(cuid())
   quantity    Int
-  unitPrice   Decimal  @db.Decimal(10, 2)
-  lineTotal   Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal @db.Decimal(10, 2)
+  lineTotal   Decimal @db.Decimal(10, 2)
   description String
+  orderId     String
+  productId   String
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
 }
-
-model Vehicle {
-    id           String @id @default(cuid())
-    make         String
-    model        String
-    year         Int
-    licensePlate String @unique
-    tenantId     String
-    tenant       Tenant @relation(fields: [tenantId], references: [id])
-
-    @@index([tenantId])
-}
-
 
 enum OrderStatus {
   PENDING
   PROCESSING
   SHIPPED
   DELIVERED
-  CANCELED
+  CANCELLED
+}
+
+model Vehicle {
+  id           String @id @default(cuid())
+  make         String
+  model        String
+  year         Int
+  licensePlate String @unique
+  tenantId     String
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+model Banner {
+  id        String   @id @default(cuid())
+  title     String
+  imageUrl  String
+  isActive  Boolean  @default(true)
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
 }

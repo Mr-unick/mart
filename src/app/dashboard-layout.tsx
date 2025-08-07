@@ -11,6 +11,9 @@ import {
   ShieldCheck,
   Users2,
   Building,
+  Tag,
+  ImageIcon,
+  Box,
 } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import Header from '@/components/header';
@@ -41,6 +44,7 @@ export default async function DashboardLayout({
   }
 
   const isSuperAdmin = user.role.name === 'Super Admin';
+  const hasPermission = (perm: string) => user.role.permissions.some(p => p.id === perm);
 
   return (
     <CartProvider>
@@ -94,7 +98,7 @@ export default async function DashboardLayout({
                   </SidebarGroup>
                   <SidebarGroup>
                     <SidebarGroupLabel>Internal</SidebarGroupLabel>
-                    <SidebarMenuItem>
+                     <SidebarMenuItem>
                       <SidebarMenuButton asChild tooltip="Customers">
                         <Link href="/customers">
                           <Users />
@@ -107,6 +111,30 @@ export default async function DashboardLayout({
                         <Link href="/users">
                           <Users2 />
                           <span>Users</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip="Product Master">
+                        <Link href="/products-master">
+                          <Box />
+                          <span>Product Master</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip="Coupon Master">
+                        <Link href="/coupons-master">
+                          <Tag />
+                          <span>Coupon Master</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip="Banner Master">
+                        <Link href="/banners-master">
+                          <ImageIcon />
+                          <span>Banner Master</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
