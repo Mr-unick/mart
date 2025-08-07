@@ -27,8 +27,6 @@ export async function generateRoutePlan(input: GenerateRoutePlanInput): Promise<
     return generateRoutePlanFlow(input);
 }
 
-const formatAddress = (addr: any) => `${addr.street}, ${addr.city}, ${addr.state} ${addr.zip}`;
-
 const prompt = ai.definePrompt({
     name: 'routePlannerPrompt',
     input: { schema: GenerateRoutePlanInputSchema },
@@ -62,7 +60,7 @@ Your task is to take a list of orders, a list of available drivers, and a list o
 {{#each orders}}
 - Order ID: {{id}}
   - Customer: {{customerName}}
-  - Address: ${formatAddress(this.deliveryAddress)}
+  - Address: {{deliveryAddress.street}}, {{deliveryAddress.city}}, {{deliveryAddress.state}} {{deliveryAddress.zip}}
   - Total: {{grandTotal}}
 {{/each}}
 `,
