@@ -1,32 +1,10 @@
+// This file is now primarily for client-side type definitions
+// that may not directly map to the Prisma schema, or for API route types.
+// The source of truth for database models is prisma/schema.prisma.
+import type { Prisma } from '@prisma/client';
 
-export interface Tenant {
-  id: string;
-  name: string;
-  address: Address;
-  ownerName: string;
-  ownerEmail: string;
-}
-
-export interface Permission {
-  id: string;
-  name: string;
-  description: string;
-}
-
-export interface Role {
-  id: string;
-  name: string;
-  tenantId: string;
-  permissions: string[]; // Array of permission IDs
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  roleId: string;
-  tenantId: string;
-}
+// We can export Prisma-generated types
+export type { Tenant, User, Role, Permission, Product, Customer, Coupon, Order } from '@prisma/client';
 
 export interface Address {
   street: string;
@@ -35,24 +13,17 @@ export interface Address {
   zip: string;
 }
 
-export interface Customer {
-  id: string;
-  name: string;
-  tenantId: string;
-  address: Address;
-  // Map<productId, price>
-  specificPrices?: Record<string, number>;
-}
+// Example of extending a Prisma type for client-side use
+export type UserWithRoleAndPermissions = Prisma.UserGetPayload<{
+  include: {
+    role: {
+      include: {
+        permissions: true;
+      };
+    };
+  };
+}>;
 
-export interface Product {
-  id: string;
-  name:string;
-  description: string;
-  imageUrl: string;
-  defaultPrice: number;
-  tenantId: string;
-  dataAiHint: string;
-}
 
 export interface OrderItem {
   product: Product;
@@ -63,14 +34,6 @@ export interface OrderItem {
   tax: number;
   finalTotal: number;
   description: string;
-}
-
-export interface Coupon {
-  id: string;
-  code: string;
-  discount: number;
-  type: 'flat' | 'percentage';
-  tenantId: string;
 }
 
 export interface Bill {
@@ -87,15 +50,6 @@ export interface Bill {
   cgst: number;
   sgst: number;
   grandTotal: number;
-}
-
-export interface Order extends Bill {
-  id: string;
-  customerId: string;
-  customerName: string;
-  deliveryAddress: Address;
-  status: 'pending' | 'in-transit' | 'delivered' | 'cancelled';
-  createdAt: string;
 }
 
 export interface Driver {

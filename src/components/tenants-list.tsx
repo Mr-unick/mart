@@ -3,8 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { mockTenants } from '@/data/mock-data';
-import type { Tenant } from '@/types';
+import type { Tenant } from '@prisma/client';
 import {
   Card,
   CardContent,
@@ -37,14 +36,15 @@ import {
 import TenantFormDialog from './tenant-form-dialog';
 
 
-export default function TenantsList() {
+export default function TenantsList({ initialTenants }: { initialTenants: Tenant[]}) {
     const router = useRouter();
+    const [tenants, setTenants] = useState(initialTenants);
     const [searchQuery, setSearchQuery] = useState('');
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
     const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 
-    const filteredTenants = mockTenants.filter(tenant => 
+    const filteredTenants = tenants.filter(tenant => 
         tenant.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -62,10 +62,12 @@ export default function TenantsList() {
         setIsDeleteDialogOpen(true);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (selectedTenant) {
+            // Add API call to delete tenant
             console.log("Deleting tenant:", selectedTenant.id);
-            // Here you would call an API to delete the tenant
+            // After successful deletion, update state
+            setTenants(tenants.filter(t => t.id !== selectedTenant.id));
             setIsDeleteDialogOpen(false);
             setSelectedTenant(null);
         }
@@ -79,6 +81,15 @@ export default function TenantsList() {
     const handleFormClose = () => {
         setIsFormDialogOpen(false);
         setSelectedTenant(null);
+    }
+
+    const handleFormSave = (savedTenant: Tenant) => {
+        if (selectedTenant) {
+            setTenants(tenants.map(t => t.id === savedTenant.id ? savedTenant : t));
+        } else {
+            setTenants([...tenants, savedTenant]);
+        }
+        handleFormClose();
     }
 
     return (
@@ -120,7 +131,7 @@ export default function TenantsList() {
                                 <TableRow key={tenant.id} onClick={() => handleRowClick(tenant)} className="cursor-pointer">
                                     <TableCell className="font-medium">{tenant.name}</TableCell>
                                     <TableCell>{tenant.ownerName}</TableCell>
-                                    <TableCell>{`${tenant.address.city}, ${tenant.address.state}`}</TableCell>
+                                    <TableCell>{`${tenant.city}, ${tenant.state}`}</TableCell>
                                     <TableCell onClick={(e) => e.stopPropagation()}>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -166,6 +177,7 @@ export default function TenantsList() {
             <TenantFormDialog 
                 isOpen={isFormDialogOpen}
                 onOpenChange={handleFormClose}
+                onSave={handleFormSave}
                 tenant={selectedTenant}
             />
         </>

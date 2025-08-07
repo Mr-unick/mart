@@ -2,15 +2,11 @@ import Link from 'next/link';
 import {
   Package2,
   Users,
-  LineChart,
-  ShoppingCart,
   Map,
   Store,
-  Settings,
+  ShoppingCart,
   ShieldCheck,
-  User,
   Users2,
-  Palette,
   Building,
 } from 'lucide-react';
 
@@ -25,24 +21,25 @@ import {
   SidebarProvider,
   SidebarTrigger,
   SidebarInset,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { CartProvider } from '@/context/cart-context';
-import { mockUsers, mockRoles } from '@/data/mock-data';
+import { prisma } from '@/lib/db';
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   // In a real app, you'd get the current user from an auth session.
-  const currentUser = mockUsers[0]; // Assuming Alice Admin is logged in
-  const userRole = mockRoles.find(role => role.id === currentUser.roleId);
-  const isSuperAdmin = userRole?.name === 'Super Admin';
-  const isTenantAdmin = userRole?.name === 'Admin';
+  // For now, we'll fetch the hardcoded super admin.
+  const currentUser = await prisma.user.findUnique({
+    where: { id: 'user_super_admin' },
+    include: { role: { include: { permissions: true } } },
+  });
 
+  const isSuperAdmin = currentUser?.role.name === 'Super Admin';
 
   return (
     <CartProvider>

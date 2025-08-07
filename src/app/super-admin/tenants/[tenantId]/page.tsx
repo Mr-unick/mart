@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { mockTenants } from '@/data/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { Palette } from 'lucide-react';
 import React from 'react';
 import DashboardLayout from '@/app/dashboard-layout';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { Tenant } from '@prisma/client';
 
 const profileSchema = z.object({
     name: z.string().min(1, 'Tenant name is required'),
@@ -29,13 +30,16 @@ const themeSchema = z.object({
     accent: z.string(),
 });
 
-function TenantProfileForm({ tenant }: { tenant: any }) {
+function TenantProfileForm({ tenant }: { tenant: Tenant }) {
     const { toast } = useToast();
     const form = useForm<z.infer<typeof profileSchema>>({
         resolver: zodResolver(profileSchema),
         defaultValues: {
             name: tenant.name,
-            ...tenant.address,
+            street: tenant.street,
+            city: tenant.city,
+            state: tenant.state,
+            zip: tenant.zip,
         }
     });
 
@@ -135,19 +139,17 @@ function ThemeCustomizationForm() {
     const form = useForm<z.infer<typeof themeSchema>>({
         resolver: zodResolver(themeSchema),
         defaultValues: {
-            primary: '207 90% 54%', // Deep sky blue (#42A5F5) -> HSL
-            background: '0 0% 96.1%', // Light gray (#F5F5F5) -> HSL
-            accent: '16 100% 63%', // Vibrant orange (#FF7043) -> HSL
+            primary: '207 90% 54%',
+            background: '0 0% 96.1%',
+            accent: '16 100% 63%',
         }
     });
 
-    const applyTheme = (values: z.infer<typeof themeSchema>) => {
-        if (typeof window !== 'undefined') {
-            document.documentElement.style.setProperty('--primary', values.primary);
-            document.documentElement.style.setProperty('--background', values.background);
-            document.documentElement.style.setProperty('--accent', values.accent);
-        }
-    }
+    const applyTheme = React.useCallback((values: z.infer<typeof themeSchema>) => {
+        document.documentElement.style.setProperty('--primary', values.primary);
+        document.documentElement.style.setProperty('--background', values.background);
+        document.documentElement.style.setProperty('--accent', values.accent);
+    }, []);
 
     function onSubmit(values: z.infer<typeof themeSchema>) {
         console.log(values);
@@ -155,11 +157,10 @@ function ThemeCustomizationForm() {
         toast({ title: "Theme Updated", description: "Color scheme has been updated." });
     }
     
-    // Apply theme on initial load
     React.useEffect(() => {
         const defaultValues = form.getValues();
         applyTheme(defaultValues);
-    }, [form]);
+    }, [form, applyTheme]);
 
 
     return (
@@ -225,8 +226,65 @@ function ThemeCustomizationForm() {
     );
 }
 
-export default function TenantDetailsPage({ params }: { params: { tenantId: string } }) {
-    const tenant = mockTenants.find(t => t.id === params.tenantId);
+export default function TenantDetailsPage() {
+    const params = useParams();
+    const tenantId = params.tenantId as string;
+    const [tenant, setTenant] = React.useState<Tenant | null>(null);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        async function fetchTenant() {
+            if (tenantId) {
+                // In a real app, you would fetch this from an API route
+                // For now, we simulate an async fetch.
+                // const fetchedTenant = await getTenantById(tenantId);
+                // setTenant(fetchedTenant);
+                setLoading(false); // Remove this when you have a real fetch
+            }
+        }
+        // Mocking the fetch since we can't call prisma directly in a client component
+        // This would be replaced by an API call.
+        setTimeout(() => {
+             const mockTenant: Tenant = {
+                id: tenantId,
+                name: 'Innovate Corp (Loaded)',
+                street: '123 Tech Avenue',
+                city: 'Silicon Valley',
+                state: 'CA',
+                zip: '94043',
+                ownerName: "Alice Admin",
+                ownerEmail: "alice@example.com",
+             };
+             setTenant(mockTenant);
+             setLoading(false);
+        }, 500);
+
+    }, [tenantId]);
+
+
+    if (loading) {
+        return (
+             <DashboardLayout>
+                <div className="space-y-8">
+                    <Card>
+                        <CardHeader><Skeleton className="h-8 w-48" /></CardHeader>
+                        <CardContent className="space-y-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </CardContent>
+                        <CardFooter><Skeleton className="h-10 w-24" /></CardFooter>
+                    </Card>
+                     <Card>
+                        <CardHeader><Skeleton className="h-8 w-48" /></CardHeader>
+                        <CardContent className="space-y-4">
+                           <Skeleton className="h-10 w-full" />
+                        </CardContent>
+                        <CardFooter><Skeleton className="h-10 w-24" /></CardFooter>
+                    </Card>
+                </div>
+            </DashboardLayout>
+        )
+    }
 
     if (!tenant) {
         notFound();

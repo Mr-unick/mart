@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id     String @id @default(cuid())
+  name   String
+  street String
+  city   String
+  state  String
+  zip    String
+
+  ownerName  String
+  ownerEmail String
+
+  products Product[]
+  coupons  Coupon[]
+  users    User[]
+  roles    Role[]
+
+  @@index([name])
+}
+
+model User {
+  id      String @id @default(cuid())
+  name    String
+  email   String @unique
+  roleId  String
+  role    Role   @relation(fields: [roleId], references: [id])
+  tenant  Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  @@index([email])
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String
+  tenant      Tenant @relation(fields: [tenantId], references: [id])
+  tenantId    String
+  permissions Permission[] @relation("RolePermissions")
+  users       User[]
+
+  @@unique([name, tenantId])
+}
+
+model Permission {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+  roles       Role[] @relation("RolePermissions")
+}
+
+model Product {
+  id           String  @id @default(cuid())
+  name         String
+  description  String  @db.Text
+  imageUrl     String
+  defaultPrice Float
+  dataAiHint   String
+  tenant       Tenant  @relation(fields: [tenantId], references: [id])
+  tenantId     String
+}
+
+model Customer {
+  id             String           @id @default(cuid())
+  name           String
+  tenantId       String
+  street         String
+  city           String
+  state          String
+  zip            String
+  specificPrices Json?
+  orders         Order[]
+}
+
+model Coupon {
+  id       String @id @default(cuid())
+  code     String @unique
+  discount Float
+  type     String // 'flat' or 'percentage'
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+}
+
+model Order {
+  id              String   @id @default(cuid())
+  orderNumber     String   @unique
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id])
+  customerName    String
+  street          String
+  city            String
+  state           String
+  zip             String
+  items           Json // JSON array of OrderItem
+  subtotal        Float
+  totalDiscount   Float
+  couponDiscount  Json? // JSON object for coupon details
+  taxableAmount   Float
+  totalTax        Float
+  cgst            Float
+  sgst            Float
+  grandTotal      Float
+  status          String   @default("pending") // 'pending', 'in-transit', etc.
+  createdAt       DateTime @default(now())
+}

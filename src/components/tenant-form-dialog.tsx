@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from './ui/dialog';
-import type { Tenant } from '@/types';
+import type { Tenant } from '@prisma/client';
 import { Separator } from './ui/separator';
 
 const formSchema = z.object({
@@ -31,37 +31,37 @@ const formSchema = z.object({
 type TenantFormDialogProps = {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    onSave: (tenant: Tenant) => void;
     tenant: Tenant | null;
 };
 
-export default function TenantFormDialog({ isOpen, onOpenChange, tenant }: TenantFormDialogProps) {
+export default function TenantFormDialog({ isOpen, onOpenChange, onSave, tenant }: TenantFormDialogProps) {
     const { toast } = useToast();
     const isEditing = !!tenant;
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            name: tenant?.name || '',
-            street: tenant?.address.street || '',
-            city: tenant?.address.city || '',
-            state: tenant?.address.state || '',
-            zip: tenant?.address.zip || '',
-            ownerName: tenant?.ownerName || '',
-            ownerEmail: tenant?.ownerEmail || '',
+            name: '',
+            street: '',
+            city: '',
+            state: '',
+            zip: '',
+            ownerName: '',
+            ownerEmail: '',
             password: '',
             confirmPassword: '',
         }
     });
     
-    // Reset form when tenant changes
     React.useEffect(() => {
         if (isOpen) {
             form.reset({
                 name: tenant?.name || '',
-                street: tenant?.address.street || '',
-                city: tenant?.address.city || '',
-                state: tenant?.address.state || '',
-                zip: tenant?.address.zip || '',
+                street: tenant?.street || '',
+                city: tenant?.city || '',
+                state: tenant?.state || '',
+                zip: tenant?.zip || '',
                 ownerName: tenant?.ownerName || '',
                 ownerEmail: tenant?.ownerEmail || '',
                 password: '',
@@ -70,13 +70,22 @@ export default function TenantFormDialog({ isOpen, onOpenChange, tenant }: Tenan
         }
     }, [isOpen, tenant, form]);
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        // Here you would call an API to save the tenant
+        // For now, we'll just log it and show a toast
         console.log(values);
+
+        // This is a mock response, in a real app this would come from the server
+        const savedTenant: Tenant = {
+            id: tenant?.id || `tenant_${Date.now()}`,
+            ...values,
+        };
+        
+        onSave(savedTenant);
         toast({ 
             title: isEditing ? "Tenant Updated" : "Tenant Created", 
             description: `Tenant ${values.name} has been saved successfully.` 
         });
-        onOpenChange(false);
     }
 
     return (
