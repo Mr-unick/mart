@@ -12,21 +12,36 @@ import { Input } from './ui/input';
 import { MinusCircle, PlusCircle, ShoppingCart, Tag, Trash2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 export default function OrderForm() {
   const [cart, setCart] = useState<Map<string, number>>(new Map());
-  const [couponCode, setCouponCode] = useState('');
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState('');
   const [currentCustomer, setCurrentCustomer] = useState<Customer>(mockCustomers[0]);
+  const { toast } = useToast();
 
   const bill: Bill | null = useMemo(() => {
     return calculateBill({
       cart,
       customer: currentCustomer,
       allProducts: mockProducts,
-      couponCode,
+      couponCode: appliedCoupon,
       allCoupons: mockCoupons,
     });
-  }, [cart, currentCustomer, couponCode]);
+  }, [cart, currentCustomer, appliedCoupon]);
+
+  const handleApplyCoupon = () => {
+    const coupon = mockCoupons.find(c => c.code.toUpperCase() === couponInput.toUpperCase());
+    if(coupon || couponInput === "") {
+        setAppliedCoupon(couponInput);
+        if(couponInput !== "") {
+            toast({ title: "Coupon applied successfully!" });
+        }
+    } else {
+        toast({ title: "Invalid Coupon", description: "The coupon code you entered is not valid.", variant: "destructive" });
+    }
+  }
 
   const handleAddToCart = useCallback((productId: string) => {
     setCart((prevCart) => {
@@ -35,7 +50,11 @@ export default function OrderForm() {
       newCart.set(productId, currentQuantity + 1);
       return newCart;
     });
-  }, []);
+    toast({
+        title: "Added to cart",
+        description: `${mockProducts.find(p => p.id === productId)?.name} has been added to your cart.`,
+      })
+  }, [toast]);
   
   const handleUpdateQuantity = useCallback((productId: string, newQuantity: number) => {
     setCart((prevCart) => {
@@ -134,17 +153,18 @@ export default function OrderForm() {
                         <Tag className="h-5 w-5 text-muted-foreground" />
                         <Input
                             placeholder="Coupon Code"
-                            value={couponCode}
-                            onChange={(e) => setCouponCode(e.target.value)}
+                            value={couponInput}
+                            onChange={(e) => setCouponInput(e.target.value)}
                             className="flex-grow"
                         />
+                        <Button onClick={handleApplyCoupon}>Apply</Button>
                     </div>
                 </CardContent>
                 </>
             )}
           </Card>
 
-          {bill && <OrderSummary bill={bill} />}
+          {bill && bill.items.length > 0 && <OrderSummary bill={bill} />}
         </div>
       </div>
     </div>
