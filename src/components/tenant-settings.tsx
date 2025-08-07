@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { mockTenant } from '@/data/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { Palette } from 'lucide-react';
+import React from 'react';
 
 const profileSchema = z.object({
     name: z.string().min(1, 'Tenant name is required'),
@@ -132,23 +133,29 @@ function ThemeCustomizationForm() {
     const form = useForm<z.infer<typeof themeSchema>>({
         resolver: zodResolver(themeSchema),
         defaultValues: {
-            primary: '207 90% 61%',
-            background: '0 0% 96.1%',
-            accent: '16 100% 63%',
+            primary: '207 90% 54%', // Deep sky blue (#42A5F5) -> HSL
+            background: '0 0% 96.1%', // Light gray (#F5F5F5) -> HSL
+            accent: '16 100% 63%', // Vibrant orange (#FF7043) -> HSL
         }
     });
 
     function onSubmit(values: z.infer<typeof themeSchema>) {
-        // In a real app, you'd save this to a database and generate a dynamic stylesheet.
-        // For this demo, we'll just log it.
         console.log(values);
         toast({ title: "Theme Updated", description: "Color scheme has been updated." });
         
-        // This is a simplified example of how you might apply the theme
         document.documentElement.style.setProperty('--primary', values.primary);
         document.documentElement.style.setProperty('--background', values.background);
         document.documentElement.style.setProperty('--accent', values.accent);
     }
+    
+    // Apply theme on initial load
+    React.useEffect(() => {
+        const defaultValues = form.getValues();
+        document.documentElement.style.setProperty('--primary', defaultValues.primary);
+        document.documentElement.style.setProperty('--background', defaultValues.background);
+        document.documentElement.style.setProperty('--accent', defaultValues.accent);
+    }, [form]);
+
 
     return (
         <Form {...form}>
@@ -183,7 +190,7 @@ function ThemeCustomizationForm() {
                                     <FormItem>
                                         <FormLabel>Primary Color</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="207 90% 61%" {...field} />
+                                            <Input placeholder="207 90% 54%" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
