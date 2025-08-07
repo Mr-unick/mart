@@ -1,37 +1,5 @@
-import { withAuth } from "next-auth/middleware";
-
-export default withAuth(
-  // `withAuth` augments your `Request` with the user's token.
-  function middleware(req) {
-    console.log(req.nextUrl.pathname);
-    console.log(req.token);
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => token?.role === "admin",
-    },
-  }
-);
-
-export const config = { matcher: ["/admin"] };
-
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
-
-export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - / (the login page itself)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).+)',
-    '/'
-  ],
-};
 
 export async function middleware(req: NextRequest) {
   const { user } = await verifyAuth();
@@ -50,3 +18,18 @@ export async function middleware(req: NextRequest) {
 
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - / (the login page itself)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).+)',
+    '/'
+  ],
+};
