@@ -9,6 +9,7 @@ import {
   Settings,
   ShieldCheck,
   User,
+  Users2,
 } from 'lucide-react';
 
 import Header from '@/components/header';
@@ -76,6 +77,14 @@ export default function DashboardLayout({
                     <Link href="/customers">
                       <Users />
                       <span>Customers</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Users">
+                    <Link href="/users">
+                      <Users2 />
+                      <span>Users</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
